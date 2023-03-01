@@ -22,7 +22,6 @@ ev3 = EV3Brick()
 sensorBlocks = HSVColorSensor(Port.S4)
 sensorLine = ColorSensor(Port.S1)
 sensorIntersections = ColorSensor(Port.S3)
-sensorBlocksRaw = Ev3devSensor(Port.S4)
 
 """
 while True:
@@ -50,45 +49,45 @@ robot = Robot(motorLeft, motorRight, WHEEL_DIAM, WHEEL_DIST, sensorLine, sensorI
 robot.settings(TRAVEL_SPEED, TRAVEL_ACC, SPIN_SPEED, SPIN_ACC)
 
 # settings for line following
-robot.lineFollowerSettings(speed=200, target=50, gain=0.7, darkThreshold = 10 )
+robot.lineFollowerSettings(speed=200, target=45, gain=0.3, darkThreshold = 10 )
+
+# PROGRAMMA
 
 ev3.speaker.beep()
 ev3.screen.clear()
 timer.reset()
 
-robot.Scurve(50,100, 50)
-wait(1000)
+
 
 # gira in senso antiorario di 45 gradi
-#robot.spin(45) #45
-#motoreDestro.run_angle(rotation_angle=180, speed = 300)
-#motoreSinistro.run_angle(rotation_angle=180, speed = 300)
-# vai avanti di 85mm
-#robot.straight(90)
+robot.spin(25) #45
+robot.straight(70)
+robot.spin(-20)
 
-# gira in senso orario di 45 gradi
-#robot.spin(-40)
-
-# seguilinea per 135mm
-robot.seguiLineaPerDistanza(130)
+robot.seguiLineaPerDistanza(143)
 
 # leggi blocco ordine 1
 #TODO read until valid
 # eventualmente sterzatina verso sx per avvicinarsi al blocco
 ev3.speaker.beep()
 order1 = sensorBlocks.getColor()
-
 ev3.screen.print("color1: "+str(order1))
-#wait(1000)
 
-# avanza di 55mm 
-robot.seguiLineaPerDistanza(55)
-# robot.straight(55)
+robot.seguiLineaPerDistanza(48)
 
-# leggi blocco ordine 2
-#TODO read until valid
 ev3.speaker.beep()
 order2 = sensorBlocks.getColor()
 ev3.screen.print("color2: "+str(order2))
 ev3.screen.print("time: "+str(timer.time()))
-wait(5000)
+wait(2000)
+
+
+"""
+robot.seguiLineaFinoAIncrocio()
+wait(1000)
+# prendi barca
+robot.spin(62)
+robot.straight(60)
+robot.spin(-60)
+
+"""
