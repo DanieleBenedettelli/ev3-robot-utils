@@ -5,11 +5,12 @@ Date    : February 2023
 Version : 0.1
 
 """
-
-from pybricks.ev3devices import ColorSensor, Motor
+from pybricks.ev3devices import ColorSensor, Motor, GyroSensor
 from pybricks.parameters import Port, Color, Stop
 from pybricks.robotics import DriveBase
-from pybricks.tools import wait
+from pybricks.tools import wait, StopWatch
+from pybricks.iodevices import AnalogSensor
+
 from math import atan2
 
 class Side:
@@ -17,22 +18,25 @@ class Side:
     RIGHT = 1
 
 class Robot(DriveBase):
-    """ This class contains all general functionalities of Pixy.
+    """ This class contains all functionality of DriveBase + my stuff
 
     Keyword arguments:
-    port1        -- Port which the camera is connected to (Port.S1 ...)
 
     """
 
-    def __init__(self, left_motor, right_motor, wheel_diameter, axle_track, sensor1, sensor2 ):
-        self.sensorRight = sensor1 # for line following
-        self.sensorLeft = sensor2 # for intersections
+    def __init__(self, left_motor, right_motor, wheel_diameter, axle_track, colorSensor1, colorSensor2, blockSensor, gyroSensorPort ):
+        self.sensorRight = colorSensor1 # for line following
+        self.sensorLeft = colorSensor2 # for intersections
         self.sensorLine = self.sensorRight
         self.sensorIntersection = self.sensorLeft
+        self.blockSensor = blockSensor
+        self.gyro = GyroSensor(gyroSensorPort)
+        self.target = 50
         self.gain = -0.7
         self.blackThreshold = 20
         self.integralError = 0
         self.travelSpeed = 100 # mm/s
+        self.lineFollowSpeed = self.travelSpeed
         self.turnSpeed = 90
         self.wheelbase = axle_track
         self.wheelDiameter = wheel_diameter
@@ -40,6 +44,7 @@ class Robot(DriveBase):
         self.right_motor = right_motor
         #initialize super class DriveBase
         super().__init__(left_motor, right_motor, wheel_diameter, axle_track)
+        self.resetGyro()
   
     def settings(self, straight_speed, straight_acceleration, turn_rate, turn_acceleration) :
         self.travelSpeed = straight_speed
@@ -53,6 +58,61 @@ class Robot(DriveBase):
         while d<-180:
             d += 360
         return d
+
+    def saturate(self, speed, max_speed=1000):
+        """ Limit speed in range [-1000,1000] """
+        if speed > max_speed:
+            speed = max_speed
+        elif speed < -max_speed:
+            speed = -max_speed
+        return speed
+
+    def resetGyro(self):
+        self.gyro.reset_angle(0)
+        wait(500)
+        print("gyro reset...",end="")
+        while self.gyro.angle()!=0 :
+            # hard reset (simulate disconnection and reconnection)
+            dummy = AnalogSensor(Port.S4)    
+            wait(500)
+            self.gyro = GyroSensor(Port.S4)
+            self.gyro.reset_angle(0)
+        print("done!")
+
+    def readGyro(self):
+        a = self.gyro.angle()
+        heading = -((a+180)%360-180)
+        return heading
+
+    # uses unregulated motors
+    def headTo(self, angle=0, useGyro=True):
+        integral = 0
+        e = angle - self.readGyro()
+        if not useGyro:
+            self.turn(e)
+            return
+        #done = False
+        timerDone = StopWatch()
+        MAX_CMD = 100 # percent power
+        preSat = 0
+        angSpeed = 0
+        self.stop()
+        while timerDone.time() < 300:
+            e = angle - self.gyro.angle()
+            if abs(preSat)>MAX_CMD and angSpeed*integral > 0 : # segni concordi
+                integral = 0
+            integral += e
+            #integral = saturate(integral, 360)
+            #print("I:",integral)
+            preSat = 3*e + 0.02*integral
+            angSpeed = self.saturate(preSat, MAX_CMD)
+            #print("U:",angSpeed)
+            self.right_motor.dc(-angSpeed)
+            self.left_motor.dc(angSpeed)
+            if abs(e) > 5:
+                timerDone.reset()
+            wait(20)
+        self.stop()
 
     def arc(self, radius, angle, speed=100) :
         if (abs(radius)<2) :
@@ -83,10 +143,10 @@ class Robot(DriveBase):
     def spin(self, angle, stopType=Stop.BRAKE, waitForCompletion=True) :
         self.turn(-angle)# = -angle, then = stopType, wait= waitForCompletion)
 
-    def __lineFollowCore(self) :
+    def __lineFollowCore(self, speed) :
         e = self.target - self.sensorLine.reflection()
         steer = self.gain * e
-        self.drive(self.travelSpeed,steer)
+        self.drive(speed,steer)
 
 
     def lineFollowerSettings(self, speed, target, gain, darkThreshold = 10, whichSensor=Side.RIGHT, whichBorder = Side.LEFT) :
@@ -96,6 +156,7 @@ class Robot(DriveBase):
         else :
             sensorLine = self.sensorRight
             sensorIntersection = self.sensorLeft
+        self.lineFollowSpeed = speed            
         self.gain = gain
         if whichBorder is Side.LEFT:
             self.gain = -gain
@@ -103,15 +164,45 @@ class Robot(DriveBase):
         self.blackThreshold = darkThreshold     
         self.target = target       
 
-    def seguiLineaFinoAIncrocio(self):
+    def seguiLineaFinoAIncrocio(self, thr = 24, speed = None):
         self.integralError = 0
-        while self.sensorIntersection.reflection() > self.blackThreshold:
-            self.__lineFollowCore()
+        if speed is None:
+            spd = self.lineFollowSpeed 
+        else:
+            spd = speed
+        while self.sensorIntersection.reflection() > thr:
+            print(self.sensorIntersection.reflection())
+            self.__lineFollowCore(spd)
         self.straight(0) # stop con frenata
         
-    def seguiLineaPerDistanza(self, distanza):
+    def seguiLineaPerDistanza(self, distanza, speed = None):
         self.integralError = 0
+        if speed is None:
+            spd = self.lineFollowSpeed 
+        else:
+            spd = speed        
         self.reset() # reset distance
         while self.distance() < distanza :
-            self.__lineFollowCore()
+            self.__lineFollowCore(spd)
         self.straight(0) # stop con frenata
+
+    # TODO collaudare
+    def seguiContainerPerDistanza(self, sensorBlocks, distance, gain=0.5):
+        gain = 0.5
+        self.reset() # reset distance
+        while self.distance() < distance :
+            #(r,g,b) = sensorBlocksRaw.read('RGB-RAW')
+            color = sensorBlocks.getColor()
+            h,s,v = sensorBlocks.getHSV()
+            print("COLOR: ", str(color))
+            if color == Color.BLUE or color == Color.GREEN:
+                v_error = 40 - v
+                variazione = gain * v_error
+                self.drive(50,-variazione)
+            elif color == Color.WHITE:
+                v_error = 100 - v
+                gain = 0.3
+                variazione = gain * v_error
+                self.drive(50,-variazione)
+            else:
+                self.drive(50,0)
