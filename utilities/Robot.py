@@ -30,6 +30,7 @@ class Robot(DriveBase):
         self.sensorLine = self.sensorRight
         self.sensorIntersection = self.sensorLeft
         self.blockSensor = blockSensor
+        self.gyroPort = gyroSensorPort
         self.gyro = GyroSensor(gyroSensorPort)
         self.target = 50
         self.gain = -0.7
@@ -73,9 +74,9 @@ class Robot(DriveBase):
         print("gyro reset...",end="")
         while self.gyro.angle()!=0 :
             # hard reset (simulate disconnection and reconnection)
-            dummy = AnalogSensor(Port.S4)    
+            dummy = AnalogSensor(self.gyroPort )    
             wait(500)
-            self.gyro = GyroSensor(Port.S4)
+            self.gyro = GyroSensor(self.gyroPort)
             self.gyro.reset_angle(0)
         print("done!")
 
@@ -97,18 +98,22 @@ class Robot(DriveBase):
         preSat = 0
         angSpeed = 0
         self.stop()
+        e_old = 0
         while timerDone.time() < 300:
             e = angle - self.gyro.angle()
-            if abs(preSat)>MAX_CMD and angSpeed*integral > 0 : # segni concordi
-                integral = 0
-            integral += e
+            diff = e - e_old
+            e_old = e
+            #if abs(preSat)>MAX_CMD and angSpeed*integral > 0 : # segni concordi
+            #    integral = 0
+            #integral += e
             #integral = saturate(integral, 360)
             #print("I:",integral)
-            preSat = 3*e + 0.02*integral
-            angSpeed = self.saturate(preSat, MAX_CMD)
+            preSat = 4*e + 0.1*diff #+ 0.02*integral
+            angSpeed = self.saturate(preSat, self.turnSpeed)
             #print("U:",angSpeed)
-            self.right_motor.dc(-angSpeed)
-            self.left_motor.dc(angSpeed)
+            #self.right_motor.dc(-angSpeed)
+            #self.left_motor.dc(angSpeed)
+            self.drive(0,angSpeed)
             if abs(e) > 5:
                 timerDone.reset()
             wait(20)
@@ -186,23 +191,47 @@ class Robot(DriveBase):
             self.__lineFollowCore(spd)
         self.straight(0) # stop con frenata
 
-    # TODO collaudare
-    def seguiContainerPerDistanza(self, sensorBlocks, distance, gain=0.5):
-        gain = 0.5
-        self.reset() # reset distance
-        while self.distance() < distance :
-            #(r,g,b) = sensorBlocksRaw.read('RGB-RAW')
-            color = sensorBlocks.getColor()
-            h,s,v = sensorBlocks.getHSV()
+    def straightGyroContainerForDistance(self, distance, gain=0.5):
+        self.reset()
+        while self.distance() < distance:
+            color = self.blockSensor.getColor()
+            h,s,v = self.blockSensor.getHSV()
+            print (h,s,v)
             print("COLOR: ", str(color))
+            
             if color == Color.BLUE or color == Color.GREEN:
+                gain = 0.5
                 v_error = 40 - v
-                variazione = gain * v_error
-                self.drive(50,-variazione)
+                steer = gain * v_error
+                self.drive(50,-steer)
             elif color == Color.WHITE:
                 v_error = 100 - v
                 gain = 0.3
-                variazione = gain * v_error
-                self.drive(50,-variazione)
+                steer = gain * v_error
+                self.drive(50,-steer)
             else:
-                self.drive(50,0)
+                heading = self.readGyro()
+                gain = 3
+                gyro_error = 0 - heading
+                steer = gain * gyro_error
+                self.drive(50,-steer)                
+        self.straight(0)
+        self.stop()
+
+    def straightGyroForDistance(self, distance, maxSpeed = None, steerGain=0.6, driveGain = 4):
+        if maxSpeed is None:
+            maxSpeed = self.travelSpeed
+
+        self.reset()
+        togo = distance - self.distance()
+        while abs(togo)>2:
+            heading = self.readGyro()
+            steerGain = 3
+            gyro_error = 0 - heading
+            togo = distance - self.distance()
+            steer = steerGain * gyro_error
+            speed = driveGain * togo
+            speed = self.saturate(speed, maxSpeed)
+            self.drive(speed,-steer)                
+        self.straight(0)
+        self.stop()        

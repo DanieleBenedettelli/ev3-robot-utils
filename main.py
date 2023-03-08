@@ -4,13 +4,14 @@ from pybricks.ev3devices import (Motor, TouchSensor, ColorSensor,
                                  InfraredSensor, UltrasonicSensor, GyroSensor)
 from pybricks.iodevices import Ev3devSensor                                 
 from pybricks.parameters import Port, Stop, Direction, Button, Color
-from pybricks.tools import wait, StopWatch, DataLog
+from pybricks.tools import wait, StopWatch
 
 from pybricks.media.ev3dev import SoundFile, ImageFile
 from math import atan2
 
 from utilities.HSVColorSensor import HSVColorSensor
 from utilities.Robot import Robot
+from utilities.Grabber import Grabber
 
 
 # https://pybricks.com/ev3-micropython/
@@ -52,10 +53,33 @@ robot.settings(TRAVEL_SPEED, TRAVEL_ACC, SPIN_SPEED, SPIN_ACC)
 # settings for line following
 robot.lineFollowerSettings(speed=120, target=45, gain=0.4, darkThreshold = 10 )
 
+robot.gyro.reset_angle(0)#resetGyro()
+"""
+while True:
+  if Button.LEFT in ev3.buttons.pressed():
+    robot.headTo(0)
+  if Button.DOWN in ev3.buttons.pressed():
+    robot.headTo(-90)
+  if Button.UP in ev3.buttons.pressed():
+    robot.headTo(90)
+"""
 
+"""
+  __  __    _    ___ _   _ 
+ |  \/  |  / \  |_ _| \ | |
+ | |\/| | / _ \  | ||  \| |
+ | |  | |/ ___ \ | || |\  |
+ |_|  |_/_/   \_\___|_| \_|
+                           
+"""
 
+grabber = Grabber(Port.A)
+#grabber.calibrate()
+#grabber.unloadBuffer()
+#grabber.prepareForGrabbing()
 
-# PROGRAMMA
+ev3.speaker.beep()
+wait(400)
 
 ev3.speaker.beep()
 ev3.screen.clear()
@@ -90,11 +114,13 @@ print("color2: "+str(order2))
 #ev3.screen.print("time: "+str(timer.time()))
 
 robot.seguiLineaFinoAIncrocio(100)
+robot.gyro.reset_angle(0)
 robot.straight(-180)
 
 # prendi barca
 robot.Scurve(73,280,120)
-robot.straight(235)
+robot.straightGyroForDistance(distance=220, maxSpeed=150)
+#robot.straight(235)
 print(timer.time())
 ev3.screen.print(timer.time())
 
