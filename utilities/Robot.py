@@ -127,6 +127,11 @@ class Robot(DriveBase):
             #print("drive speed: %.2f mm/s"%speed)
             #print("angular speed: %.2f deg/s"%angular_speed)
             heading0 = self.angle()
+            
+            if angle < 0:
+                speed = -speed
+                angular_speed =  -angular_speed
+
             self.drive(speed, angular_speed)
             #diff = self.__subang(self.angle(), heading0)
             while abs(self.__subang(self.angle(), heading0)) < abs(angle) :
@@ -224,10 +229,11 @@ class Robot(DriveBase):
 
         self.reset()
         togo = distance - self.distance()
+        headingNow = self.readGyro()
         while abs(togo)>2:
             heading = self.readGyro()
             steerGain = 3
-            gyro_error = 0 - heading
+            gyro_error = headingNow - heading
             togo = distance - self.distance()
             steer = steerGain * gyro_error
             speed = driveGain * togo
