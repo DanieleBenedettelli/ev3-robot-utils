@@ -16,11 +16,11 @@ class Grabber(Motor):
         wait(100)
         self.reset_angle(angle = 0)
 
-    def prepareForGrabbing(self, waitForCompletion=True):
+    def prepareForGrabbing(self, waitForCompletion = True):
         self.run_target(speed=400,target_angle=280, then=Stop.BRAKE, wait=waitForCompletion)
 
     def lift(self, waitForCompletion=True):
-        self.run_target(speed=200,target_angle=90, then=Stop.BRAKE, wait=waitForCompletion)
+        self.run_target(speed=300,target_angle=90, then=Stop.BRAKE, wait=waitForCompletion)
 
     def unloadOnRamp(self, waitForCompletion=True):
         self.run_target(speed=1000,target_angle=30, then=Stop.BRAKE, wait=waitForCompletion)

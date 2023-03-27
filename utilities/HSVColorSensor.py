@@ -54,19 +54,25 @@ class HSVColorSensor(Ev3devSensor):
         hue = int(hue)
         return hue, saturation, value
 
-    def getColor(self):
+    def getColor(self, longRange=True):
         h, s, v = self.getHSV()
-        # print("HSV   :%3d %3d %3d"%(h,s,v))
+        #print("HSV   :%3d %3d %3d"%(h,s,v))
         reading = None
-        # (s > 80 and v > 5) or (s>45 and v > 10):
-        if h > 65 and h < 170 and s > 64 and v > 2:
-            reading = Color.GREEN
-        elif h > 190 and h < 245 and s > 45 and v > 2 and v < 100:
-            reading = Color.BLUE
-        elif s > 30 and s < 55 and v > 10:
-            reading = Color.WHITE
-            # else :
-            #    reading = Color.NONE
+        if longRange:
+            if h > 65 and h < 170 and s > 64 and v > 2:
+                reading = Color.GREEN
+            elif h > 190 and h < 245 and s > 45 and v > 2 and v < 100:
+                reading = Color.BLUE
+            elif s > 30 and s < 55 and v > 10:
+                reading = Color.WHITE
+        else:
+            if h > 65 and h < 170 and s > 64 and v > 50:
+                reading = Color.GREEN
+            elif h > 190 and h < 245 and s > 45 and v > 50:
+                reading = Color.BLUE
+            elif s < 20 and v > 100:
+                reading = Color.WHITE
+        #print("color:", reading)
         return reading
 
     def getRobustColor(self, colors=[Color.BLUE, Color.GREEN], samples=20):
