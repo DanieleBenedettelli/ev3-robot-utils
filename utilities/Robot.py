@@ -239,16 +239,18 @@ class Robot(DriveBase):
         self.straight(0)
         self.stop()
 
-    def straightGyroForDistance(self, distance, maxSpeed = None, steerGain=0.6, driveGain = 4, absoluteHeading = False):
+    def straightGyroForDistance(self, distance, maxSpeed = None, steerGain=0.6, driveGain = 4, absoluteHeading = True):
         if maxSpeed is None:
             maxSpeed = self.travelSpeed
 
         self.reset()
         togo = distance - self.distance()
-        if (absoluteHeading):
-            headingNow = self.readGyro()
-        else:
+
+        if absoluteHeading:
             headingNow = 0
+        else:
+            headingNow = self.readGyro()
+
         while abs(togo)>2:
             heading = self.readGyro()
             steerGain = 3

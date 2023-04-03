@@ -110,12 +110,13 @@ def FASE1():
   print("color2: "+str(order2))
   #ev3.screen.print("time: "+str(timer.time()))
 
-  robot.seguiLineaFinoAIncrocio(100)
+  #robot.straightGyroForDistance(-40)
+  robot.seguiLineaFinoAIncrocio(thr=15, speed = 100) #TODO debug, non viene eseguito
   robot.gyro.reset_angle(0)
-  robot.straight(-180)
+  robot.straightGyroForDistance(-180)
 
   # prendi barca
-  robot.Scurve(55,280,120)
+  robot.Scurve(75,280,120)
   robot.headTo(0)
   robot.straightGyroForDistance(distance=185, maxSpeed=150)
   print(timer.time())
@@ -127,16 +128,16 @@ def FASE2():
   grabber.retract()
   robot.gyro.reset_angle(0) # TODO remove this, as it was done before
   timer.reset()
-  robot.spin(-20)
-  robot.straight(40)
-  robot.spin(-20)
-  robot.straight(40)  
+  robot.spin(-35)
+  robot.straight(35)
+  robot.spin(-35)
+  robot.straight(35)  
   robot.spin(-30)
   robot.straight(260) # regola quanto mi avvicino ai container
   robot.spin(-20)
   robot.straight(40)
   robot.headTo(90)
-  robot.straightGyroForDistance(distance=65,maxSpeed=80)
+  robot.straightGyroForDistance(distance=65,maxSpeed=80, absoluteHeading=False)
   print(timer.time())
   ev3.screen.print(timer.time())
 
@@ -173,7 +174,7 @@ grabber.calibrate()
 #ASPETTA_VIA()
 #grabber.unloadBuffer()
 grabber.retract()
-#FASE1()
+FASE1()
 #FASE2()
 
 # PRENDERE CONTAINER
@@ -198,7 +199,8 @@ while not done:
     seenColor = sensorBlocks.getRobustColor()
     done = robot.manageContainer(c1, c2, seenColor)
 
-robot.straightGyroForDistance(300, maxSpeed = 120, absoluteHeading=True)
+# TODO da collaudare
+robot.straightGyroForDistance(260, maxSpeed = 120, absoluteHeading=True) 
 
 robot.straightGyroUntilContainer(maxSpeed = 40, colors=[Color.WHITE])
 ev3.speaker.beep()
