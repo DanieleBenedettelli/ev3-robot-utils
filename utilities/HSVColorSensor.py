@@ -65,8 +65,8 @@ class HSVColorSensor(Ev3devSensor):
                 reading = Color.BLUE
             elif s > 30 and s < 55 and v > 10:
                 reading = Color.WHITE
-        else:
-            if h > 65 and h < 170 and s > 64 and v > 50:
+        else: #short range
+            if h > 65 and h < 170 and s > 64 and v > 35:
                 reading = Color.GREEN
             elif h > 190 and h < 245 and s > 45 and v > 50:
                 reading = Color.BLUE
@@ -75,10 +75,10 @@ class HSVColorSensor(Ev3devSensor):
         #print("color:", reading)
         return reading
 
-    def getRobustColor(self, colors=[Color.BLUE, Color.GREEN], samples=20):
+    def getRobustColor(self, colors=[Color.BLUE, Color.GREEN], samples=20, longRange=True):
         count = [0]*len(colors)
         for i in range(samples):
-            sample = self.getColor()
+            sample = self.getColor(longRange)
             for k in range(len(colors)):
                 if sample == colors[k]:
                     # increase count for the color that is being detected

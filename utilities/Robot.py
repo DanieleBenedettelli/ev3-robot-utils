@@ -134,6 +134,12 @@ class Robot(DriveBase):
 
     # radius > 0: punto rotazione a sinistra 
     # radius < 0: punto rotazione a destra
+    """ 
+    Arguments:
+        radius {integer} : radius > 0: punto rotazione a sinistra 
+                    radius < 0: punto rotazione a destra
+        angle {integer} : degrees (positive counterclockwise)
+    """
     def arc(self, radius, angle, speed=100) :
         if (abs(radius)<2) :
             self.turn(-angle)
@@ -190,7 +196,7 @@ class Robot(DriveBase):
         self.blackThreshold = darkThreshold     
         self.target = target       
 
-    def seguiLineaFinoAIncrocio(self, thr = 24, speed = None):
+    def followLineUntilIntersection(self, thr = 24, speed = None):
         self.integralError = 0
         if speed is None:
             spd = self.lineFollowSpeed 
@@ -239,6 +245,20 @@ class Robot(DriveBase):
         self.straight(0)
         self.stop()
 
+    
+    def straightUntilLine(self, white_thr = 70, black_thr=15, maxSpeed=None):
+        if maxSpeed is None:
+            maxSpeed = self.travelSpeed
+        self.drive(maxSpeed , 0 )
+        while self.sensorRight.reflection() < white_thr:
+            #print(self.sensorRight.reflection())
+            wait(10)
+        #sled.speaker.beep()    
+        while self.sensorRight.reflection() > black_thr:
+            #print(self.sensorRight.reflection())
+            wait(10)
+        self.straight(0)      
+
     def straightGyroForDistance(self, distance, maxSpeed = None, steerGain=0.6, driveGain = 4, absoluteHeading = True):
         if maxSpeed is None:
             maxSpeed = self.travelSpeed
@@ -278,7 +298,7 @@ class Robot(DriveBase):
             self.drive(maxSpeed,-steer)                
         self.straight(0)
         self.stop() 
-        return self.blockSensor.getColor()         
+        return self.blockSensor.getColor(False)         
     
     def resetContainerLogic(self):
         self.slot1 = 0
@@ -288,22 +308,19 @@ class Robot(DriveBase):
         self.gotWhiteContainer = 0
 
     
-    # TODO add straight movement to select boat slot
     def grabContainer(self, offset = 0):
         self.grabber.lift()
         #wait(200)
         self.straightGyroForDistance(-offset,maxSpeed = 120, absoluteHeading=True)
         #self.straight(-offset)
         self.grabber.unloadOnRamp()
-        self.grabber.lift()
-        wait(500)
-        self.straightGyroForDistance(offset,maxSpeed = 120, absoluteHeading=True)
         self.grabber.prepareForGrabbing()
+        wait(100) # wait for container to slide onto the boat
+        self.straightGyroForDistance(offset,maxSpeed = 120, absoluteHeading=True)
 
-    # https://pybricks.com/ev3-micropython/
     def manageContainer(self, orderColor1, orderColor2, containerColorSeen):
-        DISTANZA_CARICO = 40
-        DISTANZA_CONSERVO = 80
+        DISTANZA_CARICO = 50
+        DISTANZA_CONSERVO = 90
         TRAVEL_SPEED = 60
         
         #global slot1, slot2, coloredContainerStock, daParteBianchi, biancoPreso
@@ -322,7 +339,7 @@ class Robot(DriveBase):
                 print("Stock")
                 self.straightGyroForDistance(DISTANZA_CONSERVO, maxSpeed=TRAVEL_SPEED, absoluteHeading=True)
                 self.grabContainer(0)
-                
+                self.straightGyroForDistance(-24, maxSpeed=TRAVEL_SPEED, absoluteHeading=True)
                 self.coloredContainerStock = 1
 
         if self.slot1 == 1 and self.slot2 == 1 and self.coloredContainerStock == 1 :
@@ -331,13 +348,13 @@ class Robot(DriveBase):
             return False
         
     def manageWhiteContainers(self):
-        DISTANZA_CARICO = 40
-        DISTANZA_CONSERVO = 80
+        DISTANZA_CARICO = 50
+        DISTANZA_CONSERVO = 85
         TRAVEL_SPEED = 60
 
         if self.gotWhiteContainer == 0:
             self.straightGyroForDistance(DISTANZA_CARICO, maxSpeed=TRAVEL_SPEED, absoluteHeading=True)
-            self.grabContainer(18*8)
+            self.grabContainer(18*8+4)
             print("Slot_4")
             self.gotWhiteContainer = 1
         else:

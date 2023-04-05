@@ -68,14 +68,6 @@ while True:
     robot.headTo(90)
 """
 
-"""
-  __  __    _    ___ _   _ 
- |  \/  |  / \  |_ _| \ | |
- | |\/| | / _ \  | ||  \| |
- | |  | |/ ___ \ | || |\  |
- |_|  |_/_/   \_\___|_| \_|
-                           
-"""
 
 def ASPETTA_VIA():
   ev3.light.on(Color.ORANGE)
@@ -85,6 +77,7 @@ def ASPETTA_VIA():
 
 # esci da base, leggi ordine, prendi barca grande e riforniscila
 def FASE1():
+  global order1, order2
   timer.reset()
   robot.spin(25) 
   robot.straight(70)
@@ -111,7 +104,7 @@ def FASE1():
   #ev3.screen.print("time: "+str(timer.time()))
 
   #robot.straightGyroForDistance(-40)
-  robot.seguiLineaFinoAIncrocio(thr=15, speed = 100) #TODO debug, non viene eseguito
+  robot.followLineUntilIntersection(thr=15, speed = 100) #TODO debug, non viene eseguito
   robot.gyro.reset_angle(0)
   robot.straightGyroForDistance(-180)
 
@@ -143,22 +136,96 @@ def FASE2():
 
 # TODO da finire
 def prendiBarcaPiccola():
-  robot.seguiLineaFinoAIncrocio()
+  robot.followLineUntilIntersection()
   robot.gyro.reset_angle(180)
   robot.arc(radius=105, angle=187, speed=150) 
   wait(1000)
   robot.turnSpeed = 60
   robot.headTo(angle=0)
   robot.straightGyroForDistance(400)
-"""
-while True:
+
+
+
+def bringBigBoatOut():
+  # vai fuori dal porto con la barca grande
+  robot.gyro.reset_angle(0)
+  robot.spin(30)
+  robot.straight(30)
+  robot.headTo(25)
+  robot.straight(30)
+  robot.drive(100,0)
+  while sensorLine.reflection() <50:
+    #print(sensorLine.reflection())
+    wait(5)
+  ev3.speaker.beep()  
+  while sensorLine.reflection() >10:
+    #print(sensorLine.reflection())
+    wait(5)
+  ev3.speaker.beep()  
+  robot.straight(30)  
+  robot.stop()
+  robot.arc(radius=110, angle=45)
+  robot.followLineUntilIntersection()
+  #robot.headTo(0)
+
+def uscitaPortoContiniFe() :
+  robot.arc(radius=-45 , angle=50 , speed=60)
+  robot.drive(80 , 0 )
+  while sensorIntersections.reflection() < 70:
+      wait(10)
+  while sensorIntersections.reflection() > 15:
+      wait(10)
+  robot.straight(85)
+  #robot.spin(50)  
+  robot.headTo(0)
+  robot.followLineForDistance(150)
+  robot.seguiLineaFinoAIncrocio()
+  robot.Scurve(300,50)
+
+def testGrabber():
+  while True:
+    if Button.CENTER in ev3.buttons.pressed():
+        robot.grabContainer()
+        while Button.CENTER in ev3.buttons.pressed():
+          wait(5)
+
+
+def getAllContainers(c1=Color.GREEN, c2=Color.BLUE):
   grabber.prepareForGrabbing()
+
+  done = False
+
+  robot.resetContainerLogic()
+  robot.gyro.reset_angle(0)
+
+  # TODO DEBUG THIS
+  while not done:
+      #avanza finché non vedi un colore
+      # TODO  continuare
+      color = robot.straightGyroUntilContainer(maxSpeed = 40, colors=[Color.BLUE, Color.GREEN])
+      ev3.speaker.beep()
+      wait(100)
+      seenColor = sensorBlocks.getRobustColor(longRange=False)
+      done = robot.manageContainer(c1, c2, seenColor)
+
+  # TODO da collaudare
+  robot.straightGyroForDistance(260, maxSpeed = 120, absoluteHeading=True) 
+
+  robot.straightGyroUntilContainer(maxSpeed = 40, colors=[Color.WHITE])
   ev3.speaker.beep()
-  while Button.CENTER not in ev3.buttons.pressed():
-    wait(10)
-  
-  grabber.lift()
-  grabber.unloadOnRamp()
+  robot.manageWhiteContainers()
+  robot.straightGyroUntilContainer(maxSpeed = 40, colors=[Color.WHITE])
+  ev3.speaker.beep()
+  robot.manageWhiteContainers()
+
+
+"""
+  __  __    _    ___ _   _ 
+ |  \/  |  / \  |_ _| \ | |
+ | |\/| | / _ \  | ||  \| |
+ | |  | |/ ___ \ | || |\  |
+ |_|  |_/_/   \_\___|_| \_|
+                           
 """
 
 # CALIBRAZIONE INIZIALE
@@ -174,38 +241,27 @@ grabber.calibrate()
 #ASPETTA_VIA()
 #grabber.unloadBuffer()
 grabber.retract()
-FASE1()
+#grabber.prepareForGrabbing()
+#FASE1()
 #FASE2()
+#testGrabber()
+#getAllContainers()
 
-# PRENDERE CONTAINER
-grabber.prepareForGrabbing()
+# porta barca grande fuori dal porto
 
-# OVERRIDE ORDER COLOR2
-c1 = Color.GREEN
-c2 = Color.BLUE
+robot.arc(radius=-45 , angle=50 , speed=60)
+robot.straightUntilLine()
+#ev3.speaker.beep(frequency=1000)  
+robot.straight(50)
+robot.arc(radius=WHEEL_DIST/2, angle=45,speed=60)
 
-done = False
-
-robot.resetContainerLogic()
+robot.followLineUntilIntersection(speed=130)
 robot.gyro.reset_angle(0)
-
-# TODO DEBUG THIS
-while not done:
-    #avanza finché non vedi un colore
-    # TODO  continuare
-    color = robot.straightGyroUntilContainer(maxSpeed = 40, colors=[Color.BLUE, Color.GREEN])
-    ev3.speaker.beep()
-    wait(100)
-    seenColor = sensorBlocks.getRobustColor()
-    done = robot.manageContainer(c1, c2, seenColor)
-
-# TODO da collaudare
-robot.straightGyroForDistance(260, maxSpeed = 120, absoluteHeading=True) 
-
-robot.straightGyroUntilContainer(maxSpeed = 40, colors=[Color.WHITE])
-ev3.speaker.beep()
-robot.manageWhiteContainers()
-robot.straightGyroUntilContainer(maxSpeed = 40, colors=[Color.WHITE])
-ev3.speaker.beep()
-robot.manageWhiteContainers()
-
+robot.straight(60)
+robot.straight(-220)
+robot.spin(45)
+robot.straight(250)
+robot.headTo(0)
+robot.straightUntilLine()
+wait(1000)
+#robot.Scurve(300,50)
