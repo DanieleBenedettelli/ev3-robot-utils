@@ -99,7 +99,7 @@ class Robot(DriveBase):
         return heading
 
     # uses unregulated motors
-    def headTo(self, angle=0, useGyro=True):
+    def headTo(self, angle=0, useGyro=True, absoluteHeading=True):
         integral = 0
         e = angle - self.readGyro()
         if not useGyro:
@@ -112,9 +112,15 @@ class Robot(DriveBase):
         angSpeed = 0
         self.stop()
         e_old = 0
+        if absoluteHeading:
+            headingNow = 0
+        else:
+            headingNow = self.gyro.angle()     
+
         while timerDone.time() < 300:
             e = angle - self.gyro.angle()
-            diff = e - e_old
+            #diff = e - e_old
+            diff = self.__subang(angle, self.gyro.angle()+headingNow) #TODO debug headingNow
             e_old = e
             #if abs(preSat)>MAX_CMD and angSpeed*integral > 0 : # segni concordi
             #    integral = 0
