@@ -201,7 +201,6 @@ def getAllContainers(c1=Color.GREEN, c2=Color.BLUE):
   # TODO DEBUG THIS
   while not done:
       #avanza finché non vedi un colore
-      # TODO  continuare
       color = robot.straightGyroUntilContainer(maxSpeed = 40, colors=[Color.BLUE, Color.GREEN])
       ev3.speaker.beep()
       wait(100)
@@ -218,6 +217,32 @@ def getAllContainers(c1=Color.GREEN, c2=Color.BLUE):
   ev3.speaker.beep()
   robot.manageWhiteContainers()
 
+
+def portaBarcaGrandeFuori():
+  # porta barca grande fuori dal porto
+  robot.arc(radius=-45 , angle=50 , speed=60)
+  robot.straightUntilLine()
+  robot.straight(50)
+  robot.arc(radius=WHEEL_DIST/2, angle=45,speed=40)
+  robot.followLineUntilIntersection(speed=130)
+  robot.gyro.reset_angle(0)
+  robot.straight(60)
+  robot.straight(-220)
+  robot.spin(45)
+  robot.straight(250)
+  robot.headTo(0)
+  robot.straightUntilLine()
+  wait(1000)
+
+def prendiBarcaPiccola():
+  robot.followLineUntilIntersection()
+  robot.gyro.reset_angle(180)
+  robot.followLineForDistance(425,speed=150)
+  #robot.straightGyroForDistance(absoluteHeading=False)
+  robot.arc(radius=95, angle=180, speed=80 )
+  robot.straightGyroForDistance(300)
+  robot.headTo(0)
+  robot.straightUntilLine()
 
 """
   __  __    _    ___ _   _ 
@@ -247,21 +272,9 @@ grabber.retract()
 #testGrabber()
 #getAllContainers()
 
-# porta barca grande fuori dal porto
-
-robot.arc(radius=-45 , angle=50 , speed=60)
-robot.straightUntilLine()
-#ev3.speaker.beep(frequency=1000)  
-robot.straight(50)
-robot.arc(radius=WHEEL_DIST/2, angle=45,speed=60)
-
-robot.followLineUntilIntersection(speed=130)
-robot.gyro.reset_angle(0)
-robot.straight(60)
-robot.straight(-220)
-robot.spin(45)
-robot.straight(250)
-robot.headTo(0)
-robot.straightUntilLine()
-wait(1000)
-#robot.Scurve(300,50)
+portaBarcaGrandeFuori()
+#TODO spingi barca grande verso gru
+#TODO vai a prendere barca piccola
+#TODO carica barca piccola
+#TODO porta barca piccola fuori dal porto
+#TODO parcheggia robot
