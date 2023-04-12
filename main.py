@@ -191,6 +191,7 @@ def testGrabber():
 
 
 def getAllContainers(c1=Color.GREEN, c2=Color.BLUE):
+
   grabber.prepareForGrabbing()
 
   done = False
@@ -283,13 +284,13 @@ while True:
 """
 
 grabber.calibrate()
-
-#ASPETTA_VIA()
-#grabber.unloadBuffer()
+grabber.unloadBuffer()
 grabber.retract()
+
+ASPETTA_VIA()
 FASE1()
 FASE2()
-getAllContainers()
+getAllContainers(order1, order2)
 portaBarcaGrandeFuori()
 prendiBarcaPiccola()
 
