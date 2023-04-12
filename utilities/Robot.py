@@ -11,6 +11,7 @@ from pybricks.robotics import DriveBase
 from pybricks.tools import wait, StopWatch
 from pybricks.iodevices import AnalogSensor
 from pybricks.hubs import EV3Brick
+from utilities.Grabber import Grabber
 
 from math import atan2
 
@@ -50,7 +51,8 @@ class Robot(DriveBase):
         self.whiteContainerInStock = 0
         self.coloredContainerStock = 0
         self.gotWhiteContainer = 0
-        self.grabber = None
+        self.grabber = Grabber()
+        self.ev3 = EV3Brick()
         #print(left_motor, right_motor, wheel_diameter, axle_track)
         #initialize super class DriveBase
         super().__init__(left_motor, right_motor, wheel_diameter, axle_track)        
@@ -87,7 +89,8 @@ class Robot(DriveBase):
         print("gyro reset...",end="")
         while self.gyro.angle()!=0 :
             # hard reset (simulate disconnection and reconnection)
-            dummy = AnalogSensor(self.gyroPort )    
+            #dummy = AnalogSensor(self.gyroPort)    
+            self.ev3.screen.print("Gyro Reset")
             wait(800)
             self.gyro = GyroSensor(self.gyroPort)
             self.gyro.reset_angle(0)
@@ -127,7 +130,7 @@ class Robot(DriveBase):
             #integral += e
             #integral = saturate(integral, 360)
             #print("I:",integral)
-            preSat = 4*e + 0.1*diff #+ 0.02*integral
+            preSat = 4.3*e + 0.1*diff #+ 0.02*integral
             angSpeed = self.saturate(preSat, self.turnSpeed)
             #print("U:",angSpeed)
             #self.right_motor.dc(-angSpeed)
@@ -138,6 +141,16 @@ class Robot(DriveBase):
             wait(20)
         self.stop()
 
+
+
+    def __sign(self,n):
+        if n>0:
+            return 1
+        elif n<0:
+            return -1
+        else :
+            return 0
+
     # radius > 0: punto rotazione a sinistra 
     # radius < 0: punto rotazione a destra
     """ 
@@ -146,25 +159,34 @@ class Robot(DriveBase):
                     radius < 0: punto rotazione a destra
         angle {integer} : degrees (positive counterclockwise)
     """
-    def arc(self, radius, angle, speed=100) :
+    def arc(self, radius, angle, speed=80) :
+        #if speed>110: 
+        #    speed = 110
         if (abs(radius)<2) :
             self.turn(-angle)
         else: 
             angular_speed = -57.295*speed/radius #deg/s
             #print("drive speed: %.2f mm/s"%speed)
             #print("angular speed: %.2f deg/s"%angular_speed)
-            heading0 = self.gyro.angle()
-            
-            if angle < 0:
+            heading0 = self.readGyro()
+            target = heading0+angle#((heading0+angle+180)%360-180)
+            print("initial heading= ",heading0)
+            print("target= ",target)
+
+            if self.__sign(radius*angle) < 0:
                 speed = -speed
                 angular_speed =  -angular_speed
 
-            self.drive(speed, angular_speed)
-            diff = self.__subang(self.gyro.angle(), heading0)
-            print(diff)
-            while abs(abs(diff) - abs(angle)) > 1 :
-                diff = self.__subang(self.gyro.angle(), heading0)
-                #print("ang diff: %.2f deg"%diff)
+            self.drive(speed, angular_speed) # this settings create the arc
+            
+            signAngle = self.__sign(angle)
+            print("sign ", signAngle)
+            diff = signAngle*10
+            #print(diff)
+            while abs(diff)>2 and signAngle*diff > 0 :
+                heading = self.readGyro()
+                diff = self.__subang(target, heading )
+                print("ang diff: %.2f deg"%(signAngle*diff) )
                 wait(1)
             self.straight(0)
 
@@ -196,8 +218,9 @@ class Robot(DriveBase):
             sensorIntersection = self.sensorLeft
         self.lineFollowSpeed = speed            
         self.gain = gain
-        if whichBorder is Side.LEFT:
+        if whichBorder is Side.RIGHT:#whichSensor : #  if same side
             self.gain = -gain
+            print("invert gain", self.gain)
         
         self.blackThreshold = darkThreshold     
         self.target = target       
@@ -209,18 +232,18 @@ class Robot(DriveBase):
         else:
             spd = speed
         while self.sensorIntersection.reflection() > thr:
-            print(self.sensorIntersection.reflection())
+            #print(self.sensorIntersection.reflection())
             self.__lineFollowCore(spd)
         self.straight(0) # stop con frenata
         
-    def followLineForDistance(self, distanza, speed = None):
+    def followLineForDistance(self, distance, speed = None):
         self.integralError = 0
         if speed is None:
             spd = self.lineFollowSpeed 
         else:
             spd = speed        
         self.reset() # reset distance
-        while self.distance() < distanza :
+        while self.distance() < distance :
             self.__lineFollowCore(spd)
         self.straight(0) # stop con frenata
 
@@ -258,11 +281,11 @@ class Robot(DriveBase):
         self.drive(maxSpeed , 0 )
         while self.sensorRight.reflection() < white_thr:
             #print(self.sensorRight.reflection())
-            wait(10)
+            wait(1)
         #sled.speaker.beep()    
         while self.sensorRight.reflection() > black_thr:
             #print(self.sensorRight.reflection())
-            wait(10)
+            wait(1)
         self.straight(0)      
 
     def straightGyroForDistance(self, distance, maxSpeed = None, steerGain=0.6, driveGain = 4, absoluteHeading = True):
@@ -276,6 +299,8 @@ class Robot(DriveBase):
             headingNow = 0
         else:
             headingNow = self.readGyro()
+
+        print("heading now: ", headingNow)
 
         while abs(togo)>2:
             heading = self.readGyro()
