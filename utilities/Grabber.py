@@ -12,7 +12,7 @@ class Grabber(Motor):
         #print("grabber default settings: " ,end="")
         #print(self.control.limits())
         self.control.limits(speed=800, acceleration=700) # default max speed is 1000 deg/s, acc is 4000 deg/s/s
-        self.run_until_stalled(-200, then=Stop.HOLD, duty_limit=40)
+        self.run_until_stalled(-200, then=Stop.HOLD, duty_limit=35)
         #wait(100)
         self.stop()
         wait(100)
