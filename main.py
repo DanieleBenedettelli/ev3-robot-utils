@@ -274,20 +274,16 @@ def prendiBarcaPiccola():
  |_|  |_/_/   \_\___|_| \_|
                            
 """
+# DATA: 12/04/2023
+# VERSIONE 0.8
 
 # CALIBRAZIONE INIZIALE
 ev3.speaker.play_notes(notes=['C5/8_', 'E5/8_', 'G5/4'],tempo=200)
-"""
-while True:
-  sensorBlocks.getColor(False)
-  wait(200)
-"""
-
 grabber.calibrate()
-grabber.unloadBuffer()
-grabber.retract()
 
 ASPETTA_VIA()
+grabber.unloadBuffer()
+grabber.retract(False)
 FASE1()
 FASE2()
 getAllContainers(order1, order2)
