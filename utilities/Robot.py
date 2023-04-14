@@ -168,8 +168,8 @@ class Robot(DriveBase):
             #print("angular speed: %.2f deg/s"%angular_speed)
             heading0 = self.readGyro()
             target = heading0+angle#((heading0+angle+180)%360-180)
-            print("initial heading= ",heading0)
-            print("target= ",target)
+            #print("initial heading= ",heading0)
+            #print("target= ",target)
 
             if self.__sign(radius*angle) < 0:
                 speed = -speed
@@ -225,7 +225,7 @@ class Robot(DriveBase):
         self.blackThreshold = darkThreshold     
         self.target = target       
 
-    def followLineUntilIntersection(self, thr = 24, speed = None):
+    def followLineUntilIntersection(self, thr = 24, speed = None, brake=True):
         self.integralError = 0
         if speed is None:
             spd = self.lineFollowSpeed 
@@ -235,7 +235,10 @@ class Robot(DriveBase):
             #print(self.sensorIntersection.reflection())
             self.__lineFollowCore(spd)
             #wait()
-        self.straight(0) # stop con frenata
+        if brake:    
+            self.straight(0) # stop con frenata
+        else:
+            self.stop()
         
     def followLineForDistance(self, distance, speed = None, brake=True):
         self.integralError = 0
@@ -243,12 +246,13 @@ class Robot(DriveBase):
             spd = self.lineFollowSpeed 
         else:
             spd = speed        
-        print("line follow speed", spd)
         self.reset() # reset distance
         while self.distance() < distance :
             self.__lineFollowCore(spd)
         if brake:
             self.straight(0) # stop con frenata
+        else :
+            self.stop()
 
     def straightGyroContainerForDistance(self, distance, gain=0.5):
         self.reset()
@@ -291,7 +295,7 @@ class Robot(DriveBase):
             wait(1)
         self.straight(0)      
 
-    def straightGyroForDistance(self, distance, maxSpeed = None, steerGain=0.6, driveGain = 4, absoluteHeading = True, headingOffset = 0):
+    def straightGyroForDistance(self, distance, maxSpeed = None, steerGain=3, driveGain = 3.5, absoluteHeading = True, headingOffset = 0):
         if maxSpeed is None:
             maxSpeed = self.travelSpeed
 
@@ -305,9 +309,8 @@ class Robot(DriveBase):
 
         print("heading now: ", headingNow)
 
-        while abs(togo)>2:
+        while abs(togo)>1:
             heading = self.readGyro()
-            steerGain = 3
             gyro_error = headingNow - heading
             togo = distance - self.distance()
             steer = steerGain * gyro_error
@@ -317,13 +320,12 @@ class Robot(DriveBase):
         self.straight(0)
         self.stop()        
 
-    def straightGyroUntilContainer(self,maxSpeed = None, steerGain=0.6, driveGain = 4, colors =[Color.BLUE, Color.GREEN], headingToKeep=-90):
+    def straightGyroUntilContainer(self,maxSpeed = None, steerGain=0.6, driveGain = 4, colors =[Color.BLUE, Color.GREEN], headingToKeep=-90, maxDistance=400):
         if maxSpeed is None:
             maxSpeed = self.travelSpeed
 
-        print("searching...")
-        while self.blockSensor.getColor(False) not in colors:
-            
+        pos0 = self.distance()
+        while self.blockSensor.getColor(False) not in colors and (self.distance()-pos0) < maxDistance:
             heading = self.readGyro()
             steerGain = 3
             gyro_error = headingToKeep - heading # maintain always same heading w.r.t 0
@@ -344,57 +346,58 @@ class Robot(DriveBase):
     def grabContainer(self, offset = 0, heading=-90):
         self.grabber.lift()
         #wait(200)
-        self.straightGyroForDistance(-offset,maxSpeed = 120, headingOffset=heading)
-        #self.straight(-offset)
+        #self.straightGyroForDistance(-offset,maxSpeed = 120, headingOffset=heading)
+        self.straight(-offset)
         self.grabber.unloadOnRamp()
         self.grabber.prepareForGrabbing()
-        wait(100) # wait for container to slide onto the boat
-        self.straightGyroForDistance(offset,maxSpeed = 120,  headingOffset=heading)
+        wait(200) # wait for container to slide onto the boat
+        #self.straightGyroForDistance(offset,maxSpeed = 120,  headingOffset=heading)
+        self.straight(offset)
 
-    def manageContainer(self, orderColor1, orderColor2, containerColorSeen):
-        DISTANZA_CARICO = 50
-        DISTANZA_CONSERVO = 90
+    def manageContainer(self, orderColor1, orderColor2, containerColorSeen,headingToKeep):
+        DISTANZA_CARICO = 45
+        DISTANZA_CONSERVO = 94
         TRAVEL_SPEED = 60
-        HEADING = -90
-        
+                
         #global slot1, slot2, coloredContainerStock, daParteBianchi, biancoPreso
         if containerColorSeen in [Color.BLUE, Color.GREEN]:
             if orderColor1 == containerColorSeen and self.slot1 == 0:
                 print("Slot 1")
-                self.straightGyroForDistance(DISTANZA_CARICO, maxSpeed=TRAVEL_SPEED, headingOffset=HEADING)
-                self.grabContainer(offset=0, heading=HEADING)
+                self.straightGyroForDistance(DISTANZA_CARICO, maxSpeed=TRAVEL_SPEED, headingOffset=headingToKeep)
+                self.grabContainer(offset=0, heading=headingToKeep)
                 self.slot1 = 1
             elif orderColor2 == containerColorSeen and self.slot2 == 0:
                 print("Slot 3")
-                self.straightGyroForDistance(DISTANZA_CARICO, maxSpeed=TRAVEL_SPEED, headingOffset=HEADING)
-                self.grabContainer(offset=12*8, heading=HEADING)
+                self.straightGyroForDistance(DISTANZA_CARICO, maxSpeed=TRAVEL_SPEED, headingOffset=headingToKeep)
+                self.grabContainer(offset=12*8, heading=headingToKeep)
                 self.slot2 = 1
             elif self.coloredContainerStock == 0:
                 print("Stock")
-                self.straightGyroForDistance(DISTANZA_CONSERVO, maxSpeed=TRAVEL_SPEED, headingOffset=HEADING)
-                self.grabContainer(offset=0, heading=HEADING)
-                self.straightGyroForDistance(-24, maxSpeed=TRAVEL_SPEED, headingOffset=HEADING)
+                self.straightGyroForDistance(DISTANZA_CONSERVO, maxSpeed=TRAVEL_SPEED, headingOffset=headingToKeep)
+                self.grabContainer(offset=0, heading=headingToKeep)
+                self.straightGyroForDistance(-24, maxSpeed=TRAVEL_SPEED, headingOffset=headingToKeep)
                 self.coloredContainerStock = 1
+            else : # skip container 
+                self.straightGyroForDistance(26, maxSpeed=TRAVEL_SPEED, headingOffset=headingToKeep)
 
         if self.slot1 == 1 and self.slot2 == 1 and self.coloredContainerStock == 1 :
             return True
         else:
             return False
         
-    def manageWhiteContainers(self):
-        DISTANZA_CARICO = 50
-        DISTANZA_CONSERVO = 85
+    def manageWhiteContainers(self,headingToKeep):
+        DISTANZA_CARICO = 45
+        DISTANZA_CONSERVO = 94
         TRAVEL_SPEED = 60
-        HEADING = -90
 
         if self.gotWhiteContainer == 0:
-            self.straightGyroForDistance(DISTANZA_CARICO, maxSpeed=TRAVEL_SPEED, headingOffset=HEADING)
-            self.grabContainer(offset=18*8+4,heading=HEADING)
+            self.straightGyroForDistance(DISTANZA_CARICO, maxSpeed=TRAVEL_SPEED, headingOffset=headingToKeep)
+            self.grabContainer(offset=18*8+4,heading=headingToKeep)
             print("Slot 4")
             self.gotWhiteContainer = 1
         else:
-            self.straightGyroForDistance(DISTANZA_CONSERVO,maxSpeed=TRAVEL_SPEED, headingOffset=HEADING)
-            self.grabContainer(offset=0,heading=HEADING)
+            self.straightGyroForDistance(DISTANZA_CONSERVO,maxSpeed=TRAVEL_SPEED, headingOffset=headingToKeep)
+            self.grabContainer(offset=0,heading=headingToKeep)
             print("Stock")
                     
 
