@@ -70,7 +70,7 @@ class HSVColorSensor(Ev3devSensor):
                 reading = Color.GREEN
             elif h > 190 and h < 245 and s > 45 and v > 35: # v>50
                 reading = Color.BLUE
-            elif s < 20 and v > 40: # v > 100
+            elif s < 20 and v > 30: # v > 40
                 reading = Color.WHITE
         #print("color:", reading)
         return reading

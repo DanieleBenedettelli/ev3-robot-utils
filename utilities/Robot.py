@@ -5,7 +5,7 @@ Date    : February 2023
 Version : 0.1
 
 """
-from pybricks.ev3devices import ColorSensor, Motor, GyroSensor
+from pybricks.ev3devices import ColorSensor, Motor, GyroSensor, InfraredSensor
 from pybricks.parameters import Port, Color, Stop
 from pybricks.robotics import DriveBase
 from pybricks.tools import wait, StopWatch
@@ -25,7 +25,6 @@ class Robot(DriveBase):
     Keyword arguments:
 
     """
-
     def __init__(self, left_motor, right_motor, wheel_diameter, axle_track, colorSensor1, colorSensor2, blockSensor, gyroSensorPort ):
         self.sensorRight = colorSensor1 # for line following
         self.sensorLeft = colorSensor2 # for intersections
@@ -75,12 +74,19 @@ class Robot(DriveBase):
             d += 360
         return d
 
-    def saturate(self, speed, max_speed=1000):
+    def saturate(self, speed, maxSpeed=1000, minSpeed = 0):
         """ Limit speed in range [-1000,1000] """
-        if speed > max_speed:
-            speed = max_speed
-        elif speed < -max_speed:
-            speed = -max_speed
+        if speed > 0 :
+            if speed > maxSpeed:
+                speed = maxSpeed
+            if speed < minSpeed:
+                speed = minSpeed
+        elif speed < 0 :
+            if speed < -maxSpeed:
+                speed = -maxSpeed
+            if speed > -minSpeed:
+                speed = -minSpeed       
+       
         return speed
 
     def resetGyro(self):
@@ -89,11 +95,12 @@ class Robot(DriveBase):
         print("gyro reset...",end="")
         while self.gyro.angle()!=0 :
             # hard reset (simulate disconnection and reconnection)
-            #dummy = AnalogSensor(self.gyroPort)    
-            self.ev3.screen.print("Gyro Reset")
-            wait(800)
+            dummy = InfraredSensor(self.gyroPort)   
+            self.ev3.screen.print("reconnection")
+            wait(2000)
             self.gyro = GyroSensor(self.gyroPort)
             self.gyro.reset_angle(0)
+            wait(200)
         print("done!")
 
     def readGyro(self):
@@ -101,44 +108,57 @@ class Robot(DriveBase):
         heading = -((a+180)%360-180)
         return heading
 
-    # uses unregulated motors
-    def headTo(self, angle=0, useGyro=True, absoluteHeading=True):
-        integral = 0
-        e = angle - self.readGyro()
-        if not useGyro:
-            self.turn(e)
-            return
-        #done = False
+    def headTo2(self, angle=0, speedMax = None, absoluteHeading=True, radius=0):
+        if speedMax is None:
+            speedMax = self.turnSpeed 
         timerDone = StopWatch()
-        MAX_CMD = 100 # percent power
         preSat = 0
         angSpeed = 0
         self.stop()
-        e_old = 0
+
         if absoluteHeading:
             headingNow = 0
         else:
             headingNow = self.gyro.angle()     
 
-        while timerDone.time() < 300:
-            #e = angle - self.gyro.angle()
-            #diff = e - e_old
-            diff = self.__subang(angle, self.gyro.angle()+headingNow) #TODO debug headingNow
-            #e_old = e
-            #if abs(preSat)>MAX_CMD and angSpeed*integral > 0 : # segni concordi
-            #    integral = 0
-            #integral += e
-            #integral = saturate(integral, 360)
-            #print("I:",integral)
-            preSat = 4.0*diff #+ 0.02*integral
-            angSpeed = self.saturate(preSat, self.turnSpeed)
+        print("heading now: ", headingNow)
+        while timerDone.time() < 200:
+            diff = self.__subang(-angle, self.gyro.angle()+headingNow) 
+            print("diff: ", diff)
+            preSat = 5.0*diff 
+            angSpeed = self.saturate(preSat, speedMax)
             #print("U:",angSpeed)
-            #self.right_motor.dc(-angSpeed)
-            #self.left_motor.dc(angSpeed)
-            self.drive(0,angSpeed)
+            speed = -angSpeed*radius/57.295
+            self.drive(speed,angSpeed)
             if abs(diff) > 0:
                 timerDone.reset()
-            #wait(20)
+        self.stop()
+
+    def headTo(self, angle=0, useGyro=True, absoluteHeading=True):
+        e = angle - self.readGyro()
+        if not useGyro:
+            self.turn(e)
+            return
+        timerDone = StopWatch()
+        preSat = 0
+        angSpeed = 0
+        self.stop()
+
+        if absoluteHeading:
+            headingNow = 0
+        else:
+            headingNow = self.gyro.angle()     
+
+        while timerDone.time() < 100:
+            diff = self.__subang(angle, self.gyro.angle()+headingNow) 
+            preSat = 4.0*diff 
+            angSpeed = self.saturate(preSat, self.turnSpeed)
+            #print("U:",angSpeed)
+            self.drive(0,angSpeed)
+            #self.left_motor.run(angSpeed)
+            #self.right_motor.run(-angSpeed)
+            if abs(diff) > 0:
+                timerDone.reset()
         self.stop()
 
     def __sign(self,n):
@@ -178,7 +198,7 @@ class Robot(DriveBase):
             self.drive(speed, angular_speed) # this settings create the arc
             
             signAngle = self.__sign(angle)
-            print("sign ", signAngle)
+            #print("sign ", signAngle)
             diff = signAngle*10
             #print(diff)
             while abs(diff)>2 and signAngle*diff > 0 :
@@ -192,8 +212,8 @@ class Robot(DriveBase):
         # Wolfram Alpha: solve [ y/2=R*sin(a), x/2 = R*(1-cos(a)) ] for R,a
         angle = 2*atan2(dx, dy)*57.296
         radius = (dx*dx+dy*dy)/(4*dx)
-        print("angle: %.2f deg"%angle)
-        print("radius: %.2f mm"%radius)
+        #print("angle: %.2f deg"%angle)
+        #print("radius: %.2f mm"%radius)
         self.arc(radius=radius,angle= angle,speed=speed)
         self.arc(radius=-radius, angle=-angle, speed=speed)
 
@@ -282,20 +302,32 @@ class Robot(DriveBase):
         self.stop()
 
     
-    def straightUntilLine(self, white_thr = 70, black_thr=15, maxSpeed=None):
+    def straightUntilLine(self, white_thr = 70, black_thr=15, maxSpeed=None, invertColors = False):
         if maxSpeed is None:
             maxSpeed = self.travelSpeed
         self.drive(maxSpeed , 0 )
-        while self.sensorRight.reflection() < white_thr:
-            #print(self.sensorRight.reflection())
-            wait(1)
-        #sled.speaker.beep()    
-        while self.sensorRight.reflection() > black_thr:
-            #print(self.sensorRight.reflection())
-            wait(1)
+        if not invertColors:
+            while self.sensorRight.reflection() < white_thr:
+                #print(self.sensorRight.reflection())
+                wait(1)
+            #self.speaker.beep()    
+            while self.sensorRight.reflection() > black_thr:
+                #print(self.sensorRight.reflection())
+                wait(1)
+        else:
+            #print("look for black")
+            #while self.sensorRight.reflection() > black_thr:
+            #    print(self.sensorRight.reflection())
+            #    wait(1)
+            #self.speaker.beep()    
+            #print("look for white")
+            while self.sensorRight.reflection() < white_thr:
+                #print(self.sensorRight.reflection())
+                wait(1)            
+        
         self.straight(0)      
 
-    def straightGyroForDistance(self, distance, maxSpeed = None, steerGain=3, driveGain = 3.5, absoluteHeading = True, headingOffset = 0):
+    def straightGyroForDistance(self, distance, maxSpeed = None, steerGain=4.5, driveGain = 3.5, absoluteHeading = True, headingOffset = 0):
         if maxSpeed is None:
             maxSpeed = self.travelSpeed
 
@@ -311,29 +343,38 @@ class Robot(DriveBase):
 
         while abs(togo)>1:
             heading = self.readGyro()
+            #print("gyro ", heading)
             gyro_error = headingNow - heading
             togo = distance - self.distance()
             steer = steerGain * gyro_error
-            speed = driveGain * togo
-            speed = self.saturate(speed, maxSpeed)
+            #speed = driveGain * togo
+            #speed = self.saturate(speed, maxSpeed)
+            speed = abs(maxSpeed)*self.__sign(distance)
             self.drive(speed,-steer)                
         self.straight(0)
         self.stop()        
 
-    def straightGyroUntilContainer(self,maxSpeed = None, steerGain=0.6, driveGain = 4, colors =[Color.BLUE, Color.GREEN], headingToKeep=-90, maxDistance=400):
+    def straightGyroUntilContainer(self,maxSpeed = None, steerGain=4.5, colors =[Color.BLUE, Color.GREEN], longRange = False, headingToKeep=-90, maxDistance=400):
         if maxSpeed is None:
             maxSpeed = self.travelSpeed
 
         pos0 = self.distance()
-        while self.blockSensor.getColor(False) not in colors and (self.distance()-pos0) < maxDistance:
+        event = 0
+        while event is 0 :
+            if self.blockSensor.getColor(longRange) in colors:
+                event = 1
+            if (self.distance()-pos0) > maxDistance:
+                event = -1
             heading = self.readGyro()
-            steerGain = 3
+            
+            #print("gyro ", heading)
+            #steerGain = 3
             gyro_error = headingToKeep - heading # maintain always same heading w.r.t 0
             steer = steerGain * gyro_error
             self.drive(maxSpeed,-steer)                
         self.straight(0)
         self.stop() 
-        return self.blockSensor.getColor(False)         
+        return event
     
     def resetContainerLogic(self):
         self.slot1 = 0
@@ -355,30 +396,30 @@ class Robot(DriveBase):
         self.straight(offset)
 
     def manageContainer(self, orderColor1, orderColor2, containerColorSeen,headingToKeep):
-        DISTANZA_CARICO = 45
-        DISTANZA_CONSERVO = 94
-        TRAVEL_SPEED = 60
+        DISTANZA_CARICO = 43
+        DISTANZA_CONSERVO = 80
+        TRAVEL_SPEED = 70
                 
         #global slot1, slot2, coloredContainerStock, daParteBianchi, biancoPreso
         if containerColorSeen in [Color.BLUE, Color.GREEN]:
             if orderColor1 == containerColorSeen and self.slot1 == 0:
                 print("Slot 1")
-                self.straightGyroForDistance(DISTANZA_CARICO, maxSpeed=TRAVEL_SPEED, headingOffset=headingToKeep)
+                self.straightGyroForDistance(distance=DISTANZA_CARICO, maxSpeed=TRAVEL_SPEED, headingOffset=headingToKeep)
                 self.grabContainer(offset=0, heading=headingToKeep)
                 self.slot1 = 1
             elif orderColor2 == containerColorSeen and self.slot2 == 0:
                 print("Slot 3")
-                self.straightGyroForDistance(DISTANZA_CARICO, maxSpeed=TRAVEL_SPEED, headingOffset=headingToKeep)
+                self.straightGyroForDistance(distance=DISTANZA_CARICO, maxSpeed=TRAVEL_SPEED, headingOffset=headingToKeep)
                 self.grabContainer(offset=12*8, heading=headingToKeep)
                 self.slot2 = 1
             elif self.coloredContainerStock == 0:
                 print("Stock")
-                self.straightGyroForDistance(DISTANZA_CONSERVO, maxSpeed=TRAVEL_SPEED, headingOffset=headingToKeep)
+                self.straightGyroForDistance(distance=DISTANZA_CONSERVO, maxSpeed=TRAVEL_SPEED, headingOffset=headingToKeep)
                 self.grabContainer(offset=0, heading=headingToKeep)
                 self.straightGyroForDistance(-24, maxSpeed=TRAVEL_SPEED, headingOffset=headingToKeep)
                 self.coloredContainerStock = 1
             else : # skip container 
-                self.straightGyroForDistance(26, maxSpeed=TRAVEL_SPEED, headingOffset=headingToKeep)
+                self.straightGyroForDistance(distance=26, maxSpeed=TRAVEL_SPEED, headingOffset=headingToKeep)
 
         if self.slot1 == 1 and self.slot2 == 1 and self.coloredContainerStock == 1 :
             return True
@@ -386,17 +427,17 @@ class Robot(DriveBase):
             return False
         
     def manageWhiteContainers(self,headingToKeep):
-        DISTANZA_CARICO = 45
-        DISTANZA_CONSERVO = 94
-        TRAVEL_SPEED = 60
+        DISTANZA_CARICO = 50 #45
+        DISTANZA_CONSERVO = 90 #94
+        TRAVEL_SPEED = 70
 
         if self.gotWhiteContainer == 0:
-            self.straightGyroForDistance(DISTANZA_CARICO, maxSpeed=TRAVEL_SPEED, headingOffset=headingToKeep)
+            self.straightGyroForDistance(distance=DISTANZA_CARICO, maxSpeed=TRAVEL_SPEED, headingOffset=headingToKeep)
             self.grabContainer(offset=18*8+4,heading=headingToKeep)
             print("Slot 4")
             self.gotWhiteContainer = 1
         else:
-            self.straightGyroForDistance(DISTANZA_CONSERVO,maxSpeed=TRAVEL_SPEED, headingOffset=headingToKeep)
+            self.straightGyroForDistance(distance=DISTANZA_CONSERVO,maxSpeed=TRAVEL_SPEED, headingOffset=headingToKeep)
             self.grabContainer(offset=0,heading=headingToKeep)
             print("Stock")
                     
