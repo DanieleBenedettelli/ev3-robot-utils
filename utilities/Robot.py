@@ -95,12 +95,18 @@ class Robot(DriveBase):
         print("gyro reset...",end="")
         while self.gyro.angle()!=0 :
             # hard reset (simulate disconnection and reconnection)
-            dummy = InfraredSensor(self.gyroPort)   
             self.ev3.screen.print("reconnection")
-            wait(2000)
+            print("try hard reset")
+            try:
+                dummy = InfraredSensor(self.gyroPort)   
+            except OSError:
+                print("dummy sensor")
             self.gyro = GyroSensor(self.gyroPort)
+            self.ev3.screen.print("keep me still!")
+            print("keep me still!")
+            wait(4000)
             self.gyro.reset_angle(0)
-            wait(200)
+            wait(100)
         print("done!")
 
     def readGyro(self):
@@ -119,12 +125,12 @@ class Robot(DriveBase):
         if absoluteHeading:
             headingNow = 0
         else:
-            headingNow = self.gyro.angle()     
+            headingNow = self.gyro.angle() # TODO debug absoluteHeading=False
 
-        print("heading now: ", headingNow)
+        #print("heading now: ", headingNow)
         while timerDone.time() < 200:
             diff = self.__subang(-angle, self.gyro.angle()+headingNow) 
-            print("diff: ", diff)
+            #print("diff: ", diff)
             preSat = 5.0*diff 
             angSpeed = self.saturate(preSat, speedMax)
             #print("U:",angSpeed)
@@ -302,27 +308,25 @@ class Robot(DriveBase):
         self.stop()
 
     
-    def straightUntilLine(self, white_thr = 70, black_thr=15, maxSpeed=None, invertColors = False):
+    def straightUntilLine(self, white_thr = 70, black_thr=15, maxSpeed=None, blackLine = True):
         if maxSpeed is None:
             maxSpeed = self.travelSpeed
         self.drive(maxSpeed , 0 )
-        if not invertColors:
+        if blackLine:
             while self.sensorRight.reflection() < white_thr:
                 #print(self.sensorRight.reflection())
-                wait(1)
+                wait(2)
             #self.speaker.beep()    
             while self.sensorRight.reflection() > black_thr:
                 #print(self.sensorRight.reflection())
-                wait(1)
+                wait(2)
         else:
-            #print("look for black")
-            #while self.sensorRight.reflection() > black_thr:
-            #    print(self.sensorRight.reflection())
-            #    wait(1)
-            #self.speaker.beep()    
-            #print("look for white")
+            print("look for white")
+            while self.sensorLeft.reflection() < white_thr:
+                print(self.sensorRight.reflection())
+                wait(1)              
             while self.sensorRight.reflection() < white_thr:
-                #print(self.sensorRight.reflection())
+                print(self.sensorRight.reflection())
                 wait(1)            
         
         self.straight(0)      
@@ -393,7 +397,9 @@ class Robot(DriveBase):
         self.grabber.prepareForGrabbing()
         wait(200) # wait for container to slide onto the boat
         #self.straightGyroForDistance(offset,maxSpeed = 120,  headingOffset=heading)
-        self.straight(offset)
+        if offset != 0 :
+            self.straight(-40) # evita che il rallentatore si blocchi sul container
+            self.straight(offset)
 
     def manageContainer(self, orderColor1, orderColor2, containerColorSeen,headingToKeep):
         DISTANZA_CARICO = 43
@@ -427,13 +433,13 @@ class Robot(DriveBase):
             return False
         
     def manageWhiteContainers(self,headingToKeep):
-        DISTANZA_CARICO = 50 #45
-        DISTANZA_CONSERVO = 90 #94
+        DISTANZA_CARICO = 53
+        DISTANZA_CONSERVO = 93 
         TRAVEL_SPEED = 70
 
         if self.gotWhiteContainer == 0:
             self.straightGyroForDistance(distance=DISTANZA_CARICO, maxSpeed=TRAVEL_SPEED, headingOffset=headingToKeep)
-            self.grabContainer(offset=18*8+4,heading=headingToKeep)
+            self.grabContainer(offset=18*8,heading=headingToKeep)
             print("Slot 4")
             self.gotWhiteContainer = 1
         else:
