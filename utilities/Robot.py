@@ -131,7 +131,7 @@ class Robot(DriveBase):
         while timerDone.time() < 200:
             diff = self.__subang(-angle, self.gyro.angle()+headingNow) 
             #print("diff: ", diff)
-            preSat = 5.0*diff 
+            preSat = 5.0*diff # TODO was 5.0
             angSpeed = self.saturate(preSat, speedMax)
             #print("U:",angSpeed)
             speed = -angSpeed*radius/57.295
@@ -157,7 +157,7 @@ class Robot(DriveBase):
 
         while timerDone.time() < 100:
             diff = self.__subang(angle, self.gyro.angle()+headingNow) 
-            preSat = 4.0*diff 
+            preSat = 6.5*diff #TODO was 4.0
             angSpeed = self.saturate(preSat, self.turnSpeed)
             #print("U:",angSpeed)
             self.drive(0,angSpeed)
@@ -331,7 +331,7 @@ class Robot(DriveBase):
         
         self.straight(0)      
 
-    def straightGyroForDistance(self, distance, maxSpeed = None, steerGain=4.5, driveGain = 3.5, absoluteHeading = True, headingOffset = 0):
+    def straightGyroForDistance(self, distance, maxSpeed = None, steerGain=4.0, driveGain = 3.5, absoluteHeading = True, headingOffset = 0):
         if maxSpeed is None:
             maxSpeed = self.travelSpeed
 
@@ -343,7 +343,7 @@ class Robot(DriveBase):
         else:
             headingNow = self.readGyro()
 
-        print("heading now: ", headingNow)
+        #print("heading now: ", headingNow)
 
         while abs(togo)>1:
             heading = self.readGyro()
