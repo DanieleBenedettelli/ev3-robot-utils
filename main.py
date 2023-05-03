@@ -192,13 +192,15 @@ def portaBarcaGrandeFuori():
   robot.stop() 
   motorLeft.hold()
   motorRight.run(130)
-  while sensorLine.reflection()<80:
+  print("prima: ",motorRight.angle())
+  while sensorLine.reflection()<70:
     wait(10)
   while sensorLine.reflection()>20:
     wait(10)
-  while sensorLine.reflection()<80:
+  while sensorLine.reflection()<70:
     wait(100)    
   motorRight.brake()
+  print("dopo: ",motorRight.angle())
   #motorRight.run_angle(speed=100,rotation_angle=60)
   motorLeft.stop()
   

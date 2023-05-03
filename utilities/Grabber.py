@@ -28,8 +28,8 @@ class Grabber(Motor):
 
     def unloadOnRamp(self, waitForCompletion=True):
         self.control.limits(speed=1000, acceleration=700)
-        self.run_target(speed=170,target_angle=30, then=Stop.BRAKE, wait=True) # TODO speed was 200
-        self.run_target(speed=170,target_angle=100, then=Stop.BRAKE, wait=waitForCompletion)
+        self.run_target(speed=150,target_angle=30, then=Stop.BRAKE, wait=True) # TODO speed was 170
+        self.run_target(speed=150,target_angle=100, then=Stop.BRAKE, wait=waitForCompletion)
         self.control.limits(speed=800, acceleration=800)
 
     def retract(self, waitForCompletion=True):
