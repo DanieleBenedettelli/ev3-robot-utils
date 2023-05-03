@@ -18,8 +18,8 @@ from utilities.Grabber import Grabber
 ev3 = EV3Brick()
 sensorBlocks = HSVColorSensor(Port.S4)
 sensorIntersections = ColorSensor(Port.S3)
-sensorLine = ColorSensor(Port.S1)
-GYRO_PORT = Port.S2
+sensorLine = ColorSensor(Port.S2)
+GYRO_PORT = Port.S1
 GRABBER_PORT = Port.A
 
 """
