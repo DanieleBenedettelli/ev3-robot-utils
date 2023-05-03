@@ -54,9 +54,10 @@ class HSVColorSensor(Ev3devSensor):
         hue = int(hue)
         return hue, saturation, value
 
-    def getColor(self, longRange=True):
+    def getColor(self, longRange=True, printHSV = False):
         h, s, v = self.getHSV()
-        #print("HSV   :%3d %3d %3d"%(h,s,v))
+        if printHSV:
+            print("HSV   :%3d %3d %3d"%(h,s,v))
         reading = None
         if longRange:
             if h > 65 and h < 170 and s > 64 and v > 2:
@@ -66,9 +67,9 @@ class HSVColorSensor(Ev3devSensor):
             elif s > 30 and s < 55 and v > 20:
                 reading = Color.WHITE
         else: #short range
-            if h > 65 and h < 170 and s > 64 and v > 35:
+            if h > 65 and h < 170 and s > 64 and v > 30:
                 reading = Color.GREEN
-            elif h > 190 and h < 245 and s > 45 and v > 35: # v>50
+            elif h > 190 and h < 245 and s > 45 and v > 30: # v>50
                 reading = Color.BLUE
             elif s < 20 and v > 30: # v > 40
                 reading = Color.WHITE

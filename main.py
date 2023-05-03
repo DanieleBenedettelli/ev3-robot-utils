@@ -95,9 +95,9 @@ def leggiOrdineRifornisciBarca():
 
   # prendi barca
   #print("curva S")
-  robot.Scurve(64,280,120)
+  robot.Scurve(65,280,120)
   
-  #robot.straightGyroForDistance(distance=178, maxSpeed=150)
+  #robot.straightGyroForDistance(distance=DISTANZA_PER_RIFORNIMENTO, maxSpeed=150)
   robot.straight(DISTANZA_PER_RIFORNIMENTO)
   robot.straight(10) 
   robot.straight(-10) 
@@ -135,7 +135,7 @@ def testGrabber():
 
 def testContainerColor() :
   while Button.CENTER not in ev3.buttons.pressed():
-    color=sensorBlocks.getColor(longRange=False)
+    color=sensorBlocks.getColor(longRange=False, printHSV=True)
     print("************* ", color)
     wait(500)
 
@@ -300,7 +300,7 @@ HEADING_CONTAINER = -90 #gradi
 # tutte distanze in millimetri
 
 DISTANZA_ORDINE = 144
-DISTANZA_PER_RIFORNIMENTO = 183 
+DISTANZA_PER_RIFORNIMENTO = 185 
 DISTANZA_AVVICINAMENTO_CONTAINER = 275 #275 # senza rilevamento banchina
 DISTANZA_PRIMA_CONTAINER_BIANCHI = 290 #250
 DISTANZA_GRU = 390 
@@ -310,8 +310,8 @@ grabber.calibrate()
 
 ev3.speaker.set_volume(100)
 ev3.speaker.play_notes(notes=['C5/8_', 'E5/8_', 'G5/4'],tempo=200)
-# testContainerColor() # se sbaglia a leggere i container
-#testGrabber()
+#testContainerColor() # se sbaglia a leggere i container
+#testGrabber() # per testare la pinza
 
 robot.resetGyro()
 
