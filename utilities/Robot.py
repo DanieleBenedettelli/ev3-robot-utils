@@ -25,7 +25,7 @@ class Robot(DriveBase):
     Keyword arguments:
 
     """
-    def __init__(self, left_motor, right_motor, wheel_diameter, axle_track, colorSensor1, colorSensor2, blockSensor, gyroSensorPort ):
+    def __init__(self, left_motor, right_motor, wheel_diameter, axle_track, colorSensor1, colorSensor2, blockSensor, gyroSensorPort, grabberMotor ):
         self.sensorRight = colorSensor1 # for line following
         self.sensorLeft = colorSensor2 # for intersections
         self.sensorLine = self.sensorRight
@@ -39,7 +39,8 @@ class Robot(DriveBase):
         self.integralError = 0
         self.travelSpeed = 100 # mm/s
         self.lineFollowSpeed = self.travelSpeed
-        self.turnSpeed = 90
+        self.turnSpeed = 180
+        self.turnAcceleration = 180
         self.wheelbase = axle_track
         self.wheelDiameter = wheel_diameter
         self.left_motor = left_motor
@@ -50,20 +51,17 @@ class Robot(DriveBase):
         self.whiteContainerInStock = 0
         self.coloredContainerStock = 0
         self.gotWhiteContainer = 0
-        self.grabber = Grabber()
+        self.grabber = grabberMotor
         self.ev3 = EV3Brick()
         #print(left_motor, right_motor, wheel_diameter, axle_track)
         #initialize super class DriveBase
         super().__init__(left_motor, right_motor, wheel_diameter, axle_track)        
-        self.resetGyro()
-  
-    def setGrabber(self,grb):
-        #print(type(grb))
-        self.grabber = grb
+        #self.resetGyro()
 
     def settings(self, straight_speed, straight_acceleration, turn_rate, turn_acceleration) :
         self.travelSpeed = straight_speed
         self.turnSpeed = turn_rate
+        self.turnAcceleration = turn_acceleration
         super().settings(straight_speed, straight_acceleration, turn_rate, turn_acceleration) 
 
     def __subang(self,a,b):
@@ -90,13 +88,14 @@ class Robot(DriveBase):
         return speed
 
     def resetGyro(self):
-        self.gyro.reset_angle(0)
-        wait(500)
         print("gyro reset...",end="")
+        self.ev3.screen.print("gyro reset")
+        self.gyro.reset_angle(0)
+        wait(1000)
         while self.gyro.angle()!=0 :
             # hard reset (simulate disconnection and reconnection)
             self.ev3.screen.print("reconnection")
-            print("try hard reset")
+            print("trying hard reset...")
             try:
                 dummy = InfraredSensor(self.gyroPort)   
             except OSError:
@@ -114,32 +113,104 @@ class Robot(DriveBase):
         heading = -((a+180)%360-180)
         return heading
 
-    def headTo2(self, angle=0, speedMax = None, absoluteHeading=True, radius=0):
-        if speedMax is None:
-            speedMax = self.turnSpeed 
+    def __sign(self,n):
+        if n>0:
+            return 1
+        elif n<0:
+            return -1
+        else :
+            return 0
+
+    # radius > 0: punto rotazione a sinistra
+    # radius < 0: punto rotazione a destra
+    def curveForward(self, maxAngSpeed = None, radius=0):
+        if maxAngSpeed is None:
+            maxAngSpeed = self.turnSpeed
+        if radius != 0:
+            tangentialSpeed = min (self.travelSpeed, abs(self.turnSpeed *radius/57.295 ) )
+            #print("tangential speed :", tangentialSpeed)
+            angSpeed = abs(tangentialSpeed/radius*57.295)
+            #print("angular speed: ", angSpeed)
+            maxAngSpeed = min (maxAngSpeed, angSpeed)
+            #print("max angular speed: ", maxAngSpeed)
+        
+        #print("angular speed: ", maxAngSpeed)
+        speed = abs(maxAngSpeed*radius/57.295)
+        print("speed: ", speed, "   ang speed: ", maxAngSpeed)
+        self.drive(speed,-maxAngSpeed*self.__sign(radius))
+        """
+        curAngSpeed = 0
+        accTimer = StopWatch()
+        while curAngSpeed < maxAngSpeed:
+            # smooth acceleration
+            curAngSpeed = accTimer.time()*self.turnAcceleration/1000
+            print("ang speed: ", curAngSpeed)
+            speed = -curAngSpeed*radius/57.295
+            self.drive(speed,angSpeed)
+        """
+
+    # radius > 0: punto rotazione a sinistra
+    # radius < 0: punto rotazione a destra
+    # angle > 0 : ruota verso sinistra
+    # angle < 0 : ruota verso destra
+    def arc(self, angle=0, maxAngSpeed = None, absoluteHeading=True, radius=0):
+        if maxAngSpeed is None:
+            maxAngSpeed = self.turnSpeed
+        if radius != 0:
+            tangentialSpeed = min (self.travelSpeed, abs(self.turnSpeed *radius/57.295 ) )
+            #print("tangential speed :", tangentialSpeed)
+            angSpeed = abs(tangentialSpeed/radius*57.295)
+            #print("angular speed: ", angSpeed)
+            maxAngSpeed = min (maxAngSpeed, angSpeed)
+        
+        #print("angular speed: ", maxAngSpeed)
         timerDone = StopWatch()
-        preSat = 0
+        cmd = 0
         angSpeed = 0
         self.stop()
 
         if absoluteHeading:
             headingNow = 0
         else:
-            headingNow = self.gyro.angle() # TODO debug absoluteHeading=False
+            headingNow = self.gyro.angle()
 
+        spd = 0
+        accTimer = StopWatch()
         #print("heading now: ", headingNow)
-        while timerDone.time() < 200:
-            diff = self.__subang(-angle, self.gyro.angle()+headingNow) 
-            #print("diff: ", diff)
-            preSat = 5.0*diff # TODO was 5.0
-            angSpeed = self.saturate(preSat, speedMax)
+        while timerDone.time() < 150:
+            err = self.__subang(-angle+headingNow, self.gyro.angle()) 
+            cmd = 6.0*err # TODO was 5.0
+
+            # smooth acceleration
+            spd = accTimer.time()*self.turnAcceleration/1000
+            if spd > maxAngSpeed:
+                spd = maxAngSpeed
+
+            angSpeed = self.saturate(cmd, spd)
             #print("U:",angSpeed)
+            #print("err: ", err)
             speed = -angSpeed*radius/57.295
             self.drive(speed,angSpeed)
-            if abs(diff) > 0:
+            if abs(err) > 0.5:
                 timerDone.reset()
         self.stop()
+    
+    # tested, working
+    def turnGyro(self, angle=0, absoluteHeading=True, radius=0):
+        if absoluteHeading:
+            headingNow = 0
+        else:
+            headingNow = self.gyro.angle()
 
+        diff = self.__subang(-angle+headingNow, self.gyro.angle()) 
+        if diff != 0 :
+            self.turn(diff)
+            diff = self.__subang(-angle+headingNow, self.gyro.angle()) 
+            if diff != 0:
+                self.turn(diff)
+
+         
+    """
     def headTo(self, angle=0, useGyro=True, absoluteHeading=True):
         e = angle - self.readGyro()
         if not useGyro:
@@ -166,14 +237,7 @@ class Robot(DriveBase):
             if abs(diff) > 0:
                 timerDone.reset()
         self.stop()
-
-    def __sign(self,n):
-        if n>0:
-            return 1
-        elif n<0:
-            return -1
-        else :
-            return 0
+    """
 
     # radius > 0: punto rotazione a sinistra 
     # radius < 0: punto rotazione a destra
@@ -183,13 +247,13 @@ class Robot(DriveBase):
                     radius < 0: punto rotazione a destra
         angle {integer} : degrees (positive counterclockwise)
     """
-    def arc(self, radius, angle, speed=80) :
+    def arcOld(self, radius, angle, maxSpeed=80) :
         #if speed>110: 
         #    speed = 110
         if (abs(radius)<2) :
             self.turn(-angle)
         else: 
-            angular_speed = -57.295*speed/radius #deg/s
+            angular_speed = -57.295*maxSpeed/radius #deg/s
             #print("drive speed: %.2f mm/s"%speed)
             #print("angular speed: %.2f deg/s"%angular_speed)
             heading0 = self.readGyro()
@@ -198,10 +262,10 @@ class Robot(DriveBase):
             #print("target= ",target)
 
             if self.__sign(radius*angle) < 0:
-                speed = -speed
+                maxSpeed = -maxSpeed
                 angular_speed =  -angular_speed
 
-            self.drive(speed, angular_speed) # this settings create the arc
+            self.drive(maxSpeed, angular_speed) # this settings create the arc
             
             signAngle = self.__sign(angle)
             #print("sign ", signAngle)
@@ -214,14 +278,15 @@ class Robot(DriveBase):
                 wait(1)
             self.straight(0)
 
-    def Scurve(self, dx, dy, speed=100):
+    def Scurve(self, dx, dy, angSpeed=50):
         # Wolfram Alpha: solve [ y/2=R*sin(a), x/2 = R*(1-cos(a)) ] for R,a
         angle = 2*atan2(dx, dy)*57.296
         radius = (dx*dx+dy*dy)/(4*dx)
         #print("angle: %.2f deg"%angle)
         #print("radius: %.2f mm"%radius)
-        self.arc(radius=radius,angle= angle,speed=speed)
-        self.arc(radius=-radius, angle=-angle, speed=speed)
+        self.arc(radius =  radius, angle =  angle, maxAngSpeed=angSpeed, absoluteHeading=False)
+        wait(10)
+        self.arc(radius = -radius, angle = -angle, maxAngSpeed=angSpeed, absoluteHeading=False)
 
 
     def spin(self, angle, stopType=Stop.BRAKE, waitForCompletion=True) :

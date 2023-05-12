@@ -5,7 +5,7 @@ from pybricks.tools import wait, StopWatch
 
 class Grabber(Motor):
 
-    def __init__(self, port=Port.A):
+    def __init__(self, port=Port.D):
         super().__init__(port)
 
     def calibrate(self):
@@ -36,5 +36,6 @@ class Grabber(Motor):
         self.run_target(speed=400,target_angle=1, then=Stop.BRAKE, wait=waitForCompletion)        
 
     def unloadBuffer(self, waitForCompletion=True):
-        self.run_until_stalled(300, then=Stop.HOLD, duty_limit=100)
+        self.run_target(speed=400,target_angle=300, then=Stop.BRAKE, wait=True)
+        self.run_until_stalled(150, then=Stop.HOLD, duty_limit=100)
         #self.run_target(speed=300,target_angle=380, then=Stop.BRAKE, wait=waitForCompletion)  
