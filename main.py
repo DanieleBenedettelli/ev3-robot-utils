@@ -55,9 +55,9 @@ def aspettaIlVia():
 def leggiOrdineRifornisciBarca():
   global order1, order2
 
-  robot.straightUntilLine(black_thr=20,maxSpeed=50) 
+  robot.straightUntilLine(black_thr=23,white_thr=65, maxSpeed=50) 
   robot.straight(20)
-  robot.lineFollowerSettings(speed=90, target=60, gain=0.2, darkThreshold = 15, whichSensor=Side.RIGHT, whichBorder = Side.LEFT )
+  robot.lineFollowerSettings(speed=100, target=65, gain=0.2, darkThreshold = 15, whichSensor=Side.RIGHT, whichBorder = Side.LEFT )
   robot.followLineForDistance(DISTANZA_ORDINE)
 
   # leggi blocco ordine 1
@@ -74,7 +74,7 @@ def leggiOrdineRifornisciBarca():
   ev3.speaker.beep(frequency=colorTones[order2])
 
   #print("follow until X")
-  robot.followLineUntilIntersection(thr=20, speed = 50)
+  robot.followLineUntilIntersection(thr=18, speed = 40)
   wait(100)
     
   #print("reset gyro")
@@ -126,8 +126,7 @@ def prendiTuttiContainer(c1=Color.GREEN, c2=Color.BLUE):
   done = False
 
   robot.resetContainerLogic()
-  heading0 = robot.readGyro() # should be -90 deg
-  #heading0 = HEADING_CONTAINER
+  heading0 = robot.readGyro() + CONTAINER_HEADING_OFFSET# should be -90 deg
   print("heading to keep:", heading0)
 
   pos0 = robot.distance() # per misurare distanza massima percorsa e fermarsi
@@ -136,10 +135,10 @@ def prendiTuttiContainer(c1=Color.GREEN, c2=Color.BLUE):
       #avanza finché non vedi un colore
       print("searching...")
       distanceLeft = MAX_DISTANCE - (robot.distance()-pos0)
-      robot.straightGyroUntilContainer(maxSpeed = 40, colors=[Color.BLUE, Color.GREEN], headingToKeep=heading0, maxDistance = distanceLeft)
+      robot.straightGyroUntilContainer(maxSpeed = 40, colors=[Color.BLUE, Color.GREEN], headingToKeep=heading0, maxDistance = distanceLeft, longRange=False) #TODO long range
       ev3.speaker.beep()
       #wait(100)
-      seenColor = sensorBlocks.getRobustColor(longRange=False)
+      seenColor = sensorBlocks.getRobustColor(longRange=False) # TODO proviamo con longRange?
       print("container color:", seenColor)
       done = robot.manageContainer(orderColor1=c1, orderColor2=c2, containerColorSeen=seenColor, headingToKeep=heading0)
 
@@ -163,10 +162,12 @@ def portaBarcaGrandeFuori():
   robot.gyro.reset_angle(HEADING_CONTAINER) # TODO remove, it's just for debug from here
   robot.grabber.retract()
 
-  robot.straightUntilLine(maxSpeed=100,  white_thr = 50, black_thr=20)
-  robot.straight(ROBOT_LENGTH)
+  robot.straight(30)
+  robot.straightUntilLine(maxSpeed=-50,  white_thr = 50, black_thr=20)
+  robot.straight(100)
+  #robot.arc(angle = -0, radius = -130, absoluteHeading = False)
 
-  robot.curveForward(radius=-WHEEL_DIST/2, maxAngSpeed=80)
+  robot.curveForward(radius=-130, maxAngSpeed=50)
   while sensorLine.reflection() < 60 :
     #print("W:", sensorLine.reflection())
     wait(10)
@@ -177,12 +178,13 @@ def portaBarcaGrandeFuori():
   ev3.speaker.beep(2000,10)  
   robot.straight(0)
 
+  robot.followLineForDistance(distance=60, brake=False,)
   robot.followLineUntilIntersection(speed=100)
-  robot.straight(50)
+  robot.straight(35)
 
-  robot.arc(radius=WHEEL_DIST/2, angle=40, absoluteHeading=False)
+  robot.arc(radius=WHEEL_DIST/2, angle=40, absoluteHeading=False, maxAngSpeed=120)
 
-  robot.curveForward(radius=WHEEL_DIST/2, maxAngSpeed=80)
+  robot.curveForward(radius=WHEEL_DIST/2, maxAngSpeed=50)
   while sensorLine.reflection() < 60 :
     #print("W:", sensorLine.reflection())
     wait(10)
@@ -198,10 +200,14 @@ def portaBarcaGrandeFuori():
   robot.straight(0)
 
   #robot.followLineForDistance(distance=300,speed=130, brake=False)
-  robot.followLineUntilIntersection(speed=130)
+  robot.lineFollowerSettings(speed=80, target=50, gain=0.3, darkThreshold = 10, whichSensor=Side.RIGHT, whichBorder=Side.LEFT)
+  robot.followLineForDistance(distance = 250,speed=200) #perché se è storta, si ferma prima dell'incrocio
+  robot.followLineUntilIntersection(speed=150)
   
   robot.gyro.reset_angle(0)
-  robot.straight(73)# allinea anello container rosso con gancio gru
+  wait(150)
+  robot.straight(67)# allinea anello container rosso con gancio gru
+  
   robot.straight(-220)
 
   #robot.arc(45)
@@ -216,68 +222,71 @@ def portaBarcaGrandeFuori():
 
   #robot.arc(-90)
   robot.turnGyro(angle=-90, absoluteHeading=False)
+  ev3.speaker.beep(1000,10)
+ 
   
   robot.lineFollowerSettings(speed=80, target=30, gain=0.4, darkThreshold = 10, whichSensor=Side.LEFT, whichBorder=Side.RIGHT)
-  robot.followLineForDistance(distance = DISTANZA_GRU,speed=180)
+  robot.followLineForDistance(distance = DISTANZA_GRU,speed=300)
   #robot.straightGyroForDistance(distance=DISTANZA_GRU,maxSpeed=200,absoluteHeading=False) # avvicinamento alla gru
 
-  #print("indietro")
-  robot.drive(-ROBOT_LENGTH,0)
+  # indietro fino a linea
+  robot.drive(-200,0)
   while (sensorIntersections.reflection()>30 or sensorLine.reflection()>30):
     #print("R: ", sensorIntersections.reflection())
     #print("L: ", sensorLine.reflection())
     wait(5)
   robot.straight(0)
    
-  robot.straightGyroForDistance(distance=DISTANZA_DOPO_GRU, maxSpeed = 200, absoluteHeading=False) # regola posizione sensore su bordo linea
+  robot.straightGyroForDistance(distance=DISTANZA_DOPO_GRU, maxSpeed = 300, absoluteHeading=False) # regola posizione sensore su bordo linea
   
-  #robot.arc(180)
-  robot.turnGyro(angle=180, absoluteHeading=True)
+  #robot.arc(angle=180, radius=0, absoluteHeading=False)
+  robot.turnGyro(angle=-90, absoluteHeading=False)
 
 def prendiBarcaPiccola():
-  robot.lineFollowerSettings(speed=100, target=30, gain=0.3, darkThreshold = 20, whichSensor=Side.RIGHT, whichBorder=Side.LEFT)
+  robot.lineFollowerSettings(speed=100, target=50, gain=0.35, darkThreshold = 20, whichSensor=Side.RIGHT, whichBorder=Side.LEFT)
   
-  #robot.followLineForDistance(distance=480 , speed=200, brake=False)
-  
+  #primo incrocio
+  robot.followLineForDistance(distance=100 , speed=150, brake=False)
+  robot.followLineForDistance(distance=400 , speed=400, brake=False)
   robot.followLineUntilIntersection(speed=200,brake=False)
 
-  #robot.followLineForDistance(distance=480 , speed=200, brake=False)  
-
-  robot.followLineForDistance(distance=200 , speed=200, brake=False)  
+  # secondo incrocio
+  robot.followLineForDistance(distance=440 , speed=400, brake=False)  
   robot.followLineUntilIntersection(speed=200, brake=True)
 
-  wait(200)
+  wait(100)
   robot.gyro.reset_angle(180)
 
-  robot.followLineForDistance(distance=430,speed=200)
+  robot.followLineForDistance(distance=430,speed=250)
   wait(100)
 
   # arco per prendere barca
   print("180 arc")
-  robot.arc(radius=93, angle=180, maxAngSpeed=100, absoluteHeading=False )  # radius era 95
+  robot.arc(radius=88, angle=180, maxAngSpeed=100, absoluteHeading=False )  # radius era 95
   
   print("straightGyroForDistance")
-  robot.straightGyroForDistance(600, maxSpeed=200, absoluteHeading=True, headingOffset=0) # vai verso heading = 0
+  robot.straightGyroForDistance(distance=250, maxSpeed=180, absoluteHeading=True, headingOffset=0) # vai verso heading = 0
+
+  robot.turnGyro(angle = 10, absoluteHeading = False)
 
   robot.straightUntilLine(maxSpeed=250)
   robot.straight(ROBOT_LENGTH)
 
-  #robot.arc(angle = 45, maxAngSpeed=90)
-  robot.turnGyro(angle=45, absoluteHeading=False)
+  robot.arc(angle = 35, maxAngSpeed=90, radius=WHEEL_DIST/2, absoluteHeading=False)
+  
+  robot.straightUntilLine(maxSpeed=180)
+  robot.straight(130)
 
-  robot.straightUntilLine(maxSpeed=250)
-  robot.straight(160)
-
-  #robot.arc(angle=-45,radius=-WHEEL_DIST/2,maxAngSpeed=90, absoluteHeading=False)
-  robot.turnGyro(angle=-47,absoluteHeading=False)
+  robot.arc(angle=-45,radius=-WHEEL_DIST/2,maxAngSpeed=100, absoluteHeading=False)
+  #robot.turnGyro(angle=-47,absoluteHeading=False)
 
   robot.lineFollowerSettings(speed=150,target=40,gain=0.4,darkThreshold=20,whichSensor=Side.LEFT,whichBorder=Side.RIGHT)
-  robot.followLineForDistance(distance=300, speed=200, brake=False) 
+  robot.followLineForDistance(distance=300, speed=300, brake=False) 
   robot.followLineUntilIntersection(speed=200)
 
-  robot.arc(radius=100, angle=90, absoluteHeading=False)
+  robot.arc(radius=100, angle=90, absoluteHeading=False, maxAngSpeed=100)
 
-  robot.straight(20)
+  robot.straight(200)
 
   # carica barca piccola
   robot.grabber.unloadBuffer()
@@ -286,7 +295,7 @@ def prendiBarcaPiccola():
   robot.grabber.unloadBuffer()
   robot.grabber.retract()
 
-  robot.straight(230) # end of mission
+  #robot.straight(200) # end of mission
 
 def testGrabber():
   ev3.screen.print("TEST GRABBER")
@@ -296,7 +305,7 @@ def testGrabber():
         robot.grabContainer()
     if Button.RIGHT in ev3.buttons.pressed():
         robot.grabber.unloadBuffer()
-        robot.grabber.retract(False)
+        robot.grabber.retract(True)
 
 
 def testContainerColor() :
@@ -362,14 +371,15 @@ order1 = Color.BLUE
 order2 = Color.GREEN
 
 HEADING_CONTAINER = -90 #gradi
+CONTAINER_HEADING_OFFSET = 0
 
 # tutte distanze in millimetri
-DISTANZA_ORDINE = 144
-DISTANZA_PER_RIFORNIMENTO = 160 # 185 
-DISTANZA_AVVICINAMENTO_CONTAINER = 265 #275
-DISTANZA_PRIMA_CONTAINER_BIANCHI = 290 #250
-DISTANZA_GRU = 390 
-DISTANZA_DOPO_GRU = 230 
+DISTANZA_ORDINE = 142
+DISTANZA_PER_RIFORNIMENTO = 168 # 185 
+DISTANZA_AVVICINAMENTO_CONTAINER = 260 #275
+DISTANZA_PRIMA_CONTAINER_BIANCHI = 280 #250
+DISTANZA_GRU = 415
+DISTANZA_DOPO_GRU = 210 
 
 grabber.calibrate()
 robot.resetGyro() # non scollegare e ricollegare il giroscopio, fa tutto da sé!

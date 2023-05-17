@@ -60,11 +60,11 @@ class HSVColorSensor(Ev3devSensor):
             print("HSV   :%3d %3d %3d"%(h,s,v))
         reading = None
         if longRange: # solo per l'ordine
-            if h > 65 and h < 200 and v > 2:
+            if h > 65 and h < 185 and v > 2 and v < 150:
                 reading = Color.GREEN
-            elif h > 220 and h < 245 and v > 2 and v < 100:
+            elif h > 185 and h < 245 and v > 2 and v < 105:
                 reading = Color.BLUE
-            elif s > 30 and s < 55 and v > 20:
+            elif s > 14 and s < 55 and v > 20:
                 reading = Color.WHITE                
             #elif h > 20 and h < 45 and s > 60 and v > 30:
             #    reading = Color.YELLOW     
@@ -80,7 +80,7 @@ class HSVColorSensor(Ev3devSensor):
                 reading = Color.YELLOW 
             elif (h < 10 or h > 330) and s > 70 and v > 22:
                 reading = Color.RED                       
-            elif s < 20 and v > 30: # v > 40
+            elif s < 25 and v > 50: # v > 40
                 reading = Color.WHITE
             
         #print("color:", reading)

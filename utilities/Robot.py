@@ -176,7 +176,7 @@ class Robot(DriveBase):
 
         spd = 0
         accTimer = StopWatch()
-        #print("heading now: ", headingNow)
+        print("heading now: ", headingNow)
         while timerDone.time() < 150:
             err = self.__subang(-angle+headingNow, self.gyro.angle()) 
             cmd = 5.0*err # TODO was 5.0
@@ -188,10 +188,10 @@ class Robot(DriveBase):
 
             angSpeed = self.saturate(cmd, spd)
             #print("U:",angSpeed)
-            #print("err: ", err)
+            print("err: ", err)
             speed = -angSpeed*radius/57.295
             self.drive(speed,angSpeed)
-            if abs(err) > 0.5:
+            if abs(err) > 1:
                 timerDone.reset()
         self.stop()
     
@@ -498,12 +498,13 @@ class Robot(DriveBase):
             self.straight(offset)
 
     def manageContainer(self, orderColor1, orderColor2, containerColorSeen,headingToKeep):
-        DISTANZA_CARICO = 43
-        DISTANZA_CONSERVO = 80
+        DISTANZA_CARICO = 40
+        DISTANZA_CONSERVO = 82
         TRAVEL_SPEED = 70
                 
         #global slot1, slot2, coloredContainerStock, daParteBianchi, biancoPreso
         if containerColorSeen in [Color.BLUE, Color.GREEN]:
+            print(containerColorSeen)
             if orderColor1 == containerColorSeen and self.slot1 == 0:
                 print("Slot 1")
                 self.straightGyroForDistance(distance=DISTANZA_CARICO, maxSpeed=TRAVEL_SPEED, headingOffset=headingToKeep)
@@ -534,7 +535,7 @@ class Robot(DriveBase):
             return False
         
     def manageWhiteContainers(self,headingToKeep):
-        DISTANZA_CARICO = 53
+        DISTANZA_CARICO = 40
         DISTANZA_CONSERVO = 90 
         TRAVEL_SPEED = 70
 
