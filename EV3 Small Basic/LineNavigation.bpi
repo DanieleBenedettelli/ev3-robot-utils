@@ -1,0 +1,137 @@
+Function FollowUntilCrossingAndTurnLeft()
+  FollowLine(80, 0, 1, 0)
+  Speaker.Tone(100,5000,10)
+  DriveForDistanceNoAcc(20, 30)'move to place the robot spinning axis right on the crossing
+  SpinLeft(90)
+EndFunction
+
+Function FollowUntilCrossingAndTurnRight()
+  FollowLine(80, 0, 1, 0)
+  Speaker.Tone(100,5000,10)
+  DriveForDistanceNoAcc(20, 30)'move to place the robot spinning axis right on the crossing
+  SpinRight(90)
+EndFunction
+
+Function DriveUntilLine(in number sensorPort)
+  DriveUntilLine(60, 80, 20, sensorPort)
+EndFunction
+
+Function DriveUntilLine(in number speed, in number white, in number black, in number sensorPort)
+  For i = 10 To speed
+    Motor.StartSteer(@MOTORS,i,0)
+    Program.Delay(2)
+  EndFor
+  reading = Sensor.ReadPercent(sensorPort)
+  While reading < white
+    reading = Sensor.ReadPercent(sensorPort)
+    LCD.Text(1,1,10,2,"S: "+reading+"  ")
+  EndWhile
+  Speaker.Tone(100,2000, 40)
+  'Motor.StartSteer(@MOTORS,20,0)
+  While reading > black
+    reading = Sensor.ReadPercent(sensorPort)
+    LCD.Text(1,1,10,2,"S: "+reading+"  ")
+  EndWhile
+  Motor.Stop(@MOTORS, "True")
+  Speaker.Tone(100,2000, 40)
+  
+EndFunction
+
+Function BackUpAlignCrossing()
+  Motor.Start(@MOTOR_RIGHT,-10)
+  readingR = Sensor.ReadPercent(@LINE_SENSOR_RIGHT)
+  While readingR > 70
+    readingR = Sensor.ReadPercent(@LINE_SENSOR_RIGHT)
+    LCD.Text(1,1,10,2,"R: "+readingR+"  ")
+    Program.Delay(1)
+  EndWhile
+  Motor.Stop(@MOTOR_RIGHT,"True")
+  
+  Motor.Start(@MOTOR_LEFT,-10)
+  readingL = Sensor.ReadPercent(@LINE_SENSOR_LEFT)
+  While readingL > 70
+    readingL = Sensor.ReadPercent(@LINE_SENSOR_LEFT)
+    LCD.Text(1,1,10,2,"L: "+readingL+"  ")
+    Program.Delay(1)
+  EndWhile
+  Motor.Stop(@MOTOR_LEFT,"True")
+EndFunction
+
+Function FollowLineForDistance(in number distance)
+  FollowLine(80, distance, 0, 1)
+EndFunction
+
+Function FollowLineUntilCrossing()
+  FollowLine(80, 0, 1, 1)
+EndFunction
+
+Function FollowLineForDistanceUntilCrossing(in number distance)
+  FollowLine(80, distance, 1, 1)
+EndFunction
+
+Function FollowLine(in number basePower, in number distanceBefore, in number UntilCrossing, in number brake)
+  eOld = 0
+  error = 0
+  'REFERENCE = 65
+  'basePower = 75
+  eI = 0
+  
+  angleToGo = @DISTANCE_FACTOR * distanceBefore
+  Motor.ResetCount(@MOTOR_LEFT)
+  Motor.ResetCount(@MOTOR_RIGHT)
+  pos0 = Motor.GetCount(@MOTOR_LEFT)
+  
+  Time.Reset1()
+  done = 0
+  While done = 0
+    
+    ' PID line following
+    readingR = Sensor.ReadPercent(@LINE_SENSOR_RIGHT)
+    readingL = Sensor.ReadPercent(@LINE_SENSOR_LEFT)
+    'error = REFERENCE - readingR
+    error = readingL - readingR ' differential reading remove the need for calibration
+    eD = error - eOld
+    eI = 0.8*eI + 0.05*error
+    eOld = error
+    u = 0.3*error + 0.008*eI + 0.15*eD
+    If Math.Abs(error) > 30 Then
+      power = basePower*0.7
+    Else
+      power = basePower
+    EndIf
+    
+    ' distance measurement
+    encLeft = Motor.GetCount(@MOTOR_LEFT)
+    diff = Math.Abs(encLeft - pos0)
+    If angleToGo <> 0 Then
+      If diff > angleToGo Then
+        power = 30
+        If untilCrossing = 0 Then
+          done = 1
+        EndIf
+      Else
+        If untilCrossing=1 Then
+          Time.Reset1()
+        EndIf
+      EndIf
+    EndIf
+    
+    ' crossing detection
+    If readingL > 25 Or readingR > 25 Then
+      Time.Reset1()
+    EndIf
+    If Time.Get1() > 40 Then
+      done = 1
+    EndIf
+    
+    Motor.StartPower(@MOTOR_RIGHT, power - u)
+    Motor.StartPower(@MOTOR_LEFT, power + u)
+    
+    Program.Delay(5)
+  EndWhile
+  If brake<>0 Then
+    Motor.Stop(@MOTORS,"True")
+  Else
+    Motor.Stop(@MOTORS,"False")
+  EndIf
+EndFunction
