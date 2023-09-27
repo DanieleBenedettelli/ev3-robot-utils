@@ -23,7 +23,7 @@ DISTANCE_FACTOR = 2.03 ' 114.591559/WHEEL_DIAMETER
 TURNING_FACTOR = 3.18 ' WHEELBASE / WHEEL_DIAMETER
 
 DISTANCE_LARGE_BOAT = 220
-DISTANCE_BLOCK1 = 150
+DISTANCE_BLOCK1 = 140
 DISTANCE_BLOCK2 = 200
 DISTANCE_FUEL = 90
 DISTANCE_FUEL_BACK = 85
@@ -45,6 +45,7 @@ Function DriveAndScanOrder(in number distance, in number distanceBlock1, in numb
   
   done = 0
   power = 60
+  eOld = 0
   
   While done = 0
     ' distance measurement
@@ -55,13 +56,13 @@ Function DriveAndScanOrder(in number distance, in number distanceBlock1, in numb
     readingL = Sensor.ReadPercent(@LINE_SENSOR_LEFT)
     error = REFERENCE - readingL
     'error = readingL - readingR ' differential reading remove the need for calibration
-    'eD = error - eOld
+    eD = error - eOld
     'eI = 0.8*eI + 0.05*error
     'eOld = error
     'u = -0.3*error '+ 0.008*eI + 0.15*eD
     
     'compensation = 0.5*(encRight - encLeft)
-    compensation = 0.35*error
+    compensation = 0.2*error '+ 0.4*eD
     
     powerRight = power + compensation
     powerLeft = power - compensation
@@ -70,7 +71,7 @@ Function DriveAndScanOrder(in number distance, in number distanceBlock1, in numb
     Motor.StartPower(@MOTOR_LEFT, powerLeft)
     Motor.StartPower(@MOTOR_RIGHT, powerRight)
     
-    LCD.Text(1, 10, 60, 1, "travel = " + Math.round(travelDone)+ " mm  ")
+    'LCD.Text(1, 10, 60, 1, "travel = " + Math.round(travelDone)+ " mm  ")
     
     If travelDone > distanceBlock1-15 Then
       power = 40
@@ -114,33 +115,66 @@ Function DriveAndScanOrder(in number distance, in number distanceBlock1, in numb
   Motor.Stop(@MOTORS, "True")
   'Speaker.Wait()
   'Speaker.Tone(100,2000, 40)
+  If order1 = "GREEN" Then
+    @greenBlocksCount += 1
+  EndIf
+  If order1 = "BLUE" Then
+    @blueBlocksCount += 1
+  EndIf
+  If order2 = "GREEN" Then
+    @greenBlocksCount += 1
+  EndIf
+  If order2 = "BLUE" Then
+    @blueBlocksCount += 1
+  EndIf
+  
 EndFunction
 
-Sub CollectAll
-  Motor.StartSteer(MOTORS, 12, 0)
+DISTANCE_FIRST_BLOCK_LINE = 190
+
+Sub CollectBlocks
+  
   searchOver = 0
   blockColor = "NONE"
-  maxDistanceToSearch = 70 ' mm
-  blockOffset = 50 ' mm
+  maxDistanceToSearch = 90 ' mm
+  blockOffset = 58 ' mm
   
   pos0 = Motor.GetCount(MOTOR_LEFT)
   found = 0
+  'block1 = 0
+  'block2 = 0
+  saveDistance = 1
+  'Time.Reset1()
   
-  Time.Reset1()
-  
+  Motor.StartSteer(MOTORS, 10, 0)
   While searchOver = 0
     ReadColor(BLOCK_SENSOR, SHORT_RANGE, SHOW_DEBUG, blockColor)
     If (blockColor<>"NONE") Then
       Motor.Stop(MOTORS, "True")
+      If saveDistance = 1 Then
+        pos1 = Motor.GetCount(@MOTOR_LEFT)
+        saveDistance = 0
+      EndIf
       Speaker.Tone(100, 5000, 100)
       ReadColorRobust(BLOCK_SENSOR, SHORT_RANGE, blockColor)
       LCD.Text(1, 10, 100, 1, "rob. color = " + blockColor + "  ")
       SayColor(blockColor, 0)
-      DriveForDistanceNoAcc(blockOffset, 15)
-      GrabAndDrop()
-      found += 1
-      'Program.Delay(1000)
-      If found = 4 Then
+      
+      If blockColor = "GREEN" And @greenBlocksCount < 2 Then
+        @greenBlocksCount += 1
+        DriveForDistanceNoAcc(blockOffset, 15)
+        GrabAndDrop()
+        found += 1
+      ElseIf blockColor = "BLUE" And @blueBlocksCount < 2 Then
+        @blueBlocksCount += 1
+        DriveForDistanceNoAcc(blockOffset, 15)
+        GrabAndDrop()
+        found += 1
+      Else
+        DriveForDistanceNoAcc(50, 15) ' supera il blocco ignorato
+      EndIf
+      
+      If found = 2 Then
         searchOver = 1
       Else ' start for the next
         pos0 = Motor.GetCount(@MOTOR_LEFT)
@@ -149,7 +183,7 @@ Sub CollectAll
       EndIf
     EndIf
     
-    If found = 4 Then
+    If found = 2 Then
       searchOver = 1
     EndIf
     
@@ -162,24 +196,46 @@ Sub CollectAll
     EndIf
   EndWhile
   
+  travelFromFirstBlock = (Motor.GetCount(@MOTOR_LEFT) - pos1 )
+  distanceToLine = DISTANCE_FIRST_BLOCK_LINE - travelFromFirstBlock/@DISTANCE_FACTOR
   LCD.Clear()
-  LCD.Text(1, 10, 100, 1, "timer " + Time.Get1() + "  ")
+  LCD.Text(1, 5, 30, 1, "d: " + travelFromFirstBlock/@DISTANCE_FACTOR + " mm ")
+  LCD.Text(1, 5, 50, 1, "go: " + distanceToLine + " mm  ")
+  DriveForDistanceNoAcc(distanceToLine, 50)
+  
+  'LCD.Clear()
+  'LCD.Text(1, 10, 100, 1, "timer " + Time.Get1() + "  ")
   
 EndSub
 
 order1 = "NONE"
 order2 = "NONE"
+greenBlocksCount = 0
+blueBlocksCount = 0
+
+FollowLine(70, 300, 1, 1)
+DriveForDistanceNoAcc(10, 10)
+FollowLine(70, 200, 1, 1)
+'DriveForDistanceNoAcc(20, 10)
+ArcRight(135) ' DEBUG PIVOT
+DriveUntilLine(@LINE_SENSOR_LEFT, 40, 1, 60, 20)
+
+Motor.Stop(MOTORS, "True")
+
+Program.End()
 
 ' CALIBRATION
-'Motor.StartPower(MOTOR_RAMP,40)
-'Program.Delay(1000)
-'Motor.Stop(MOTOR_RAMP, "True")
-'Motor.Stop(MOTORS, "True")
-'CalibrateGrabber()
+Motor.Stop(MOTORS, "True")
+Motor.StartPower(MOTOR_RAMP,30)
+Program.Delay(1000)
+Motor.Stop(MOTOR_RAMP, "True")
+CalibrateGrabber()
+
+' ATTESA PULSANTE
 
 Time.Reset9()
 
-DriveUntilLine(LINE_SENSOR_LEFT, 30, 0, 65, 22)
+DriveUntilLine(LINE_SENSOR_LEFT, 30, 1, 65, 22)
 'BackUpAlignCrossing()
 'Program.Delay(1000)
 DriveAndScanOrder(DISTANCE_LARGE_BOAT, DISTANCE_BLOCK1, DISTANCE_BLOCK2, order1, order2)
@@ -190,9 +246,10 @@ DriveAndScanOrder(DISTANCE_LARGE_BOAT, DISTANCE_BLOCK1, DISTANCE_BLOCK2, order1,
 LCD.Clear()
 LCD.Text(1, 10, 30, 1, "order1 = " + order1 + "  ")
 LCD.Text(1, 10, 40, 1, "order2 = " + order2 + "  ")
-'SayColor(order1, 1)
-'SayColor(order2, 1)
-'Program.Delay(5000)
+
+SayColor(order1, 1)
+SayColor(order2, 1)
+'Program.Delay(2000)
 
 ' SPINGI E RIFORNISCI BARCA
 DriveForDistance( DISTANCE_FUEL, 50 )
@@ -204,17 +261,26 @@ DriveForDistanceNoAcc( DISTANCE_FUEL_BACK, -60)
 ' VAI A CONTAINER A BATTUTA
 SpinRight(90)
 'Program.Delay(500)
-DriveForDistanceNoAcc(220, 70)
+DriveForDistanceNoAcc(240, 70)
 'FollowLine(40, 200, 0, 1)
 'Program.Delay(500)
 SpinRight(85)
 'Program.Delay(500)
-DriveForDistanceNoAcc(470,-60)
+DriveForDistanceNoAcc(460,-60)
 Program.Delay(100)
-DriveForDistanceNoAcc(50,-50)
-Program.Delay(100)
-DriveForDistanceNoAcc(40,20)
+Motor.StartPower(MOTORS,-50)
+Program.Delay(400)
+Motor.Stop(MOTORS,"True")
+
+'DriveForDistanceNoAcc(50,-50) ' a battuta
+'Program.Delay(100)
+DriveForDistanceNoAcc(30,20) ' determina la distanza dai blocchi
 ArcRight(90)
+LCD.Text(1, 2, 80, 2, "time: " + Time.Get9()/1000 + "  ")
+CollectBlocks()
+SpinRight(90)
+FollowLine(40, 300, 1, 0)
+FollowLine(40, 330, 1, 1)
 
 ' VAI A CONTAINER CON SEGUILINEA
 'Program.Delay(2000)
@@ -223,5 +289,5 @@ ArcRight(90)
 'SpinLeft(90)
 'FollowLine(40, 350, 0, 1)
 
-LCD.Text(1, 2, 80, 2, "time = " + Time.Get9()/1000 + "  ")
-Program.Delay(5000)
+LCD.Text(1, 2, 100, 2, "time: " + Time.Get9()/1000 + "  ")
+Program.Delay(10000)

@@ -62,15 +62,19 @@ Function ClassifyColor(in number h, in number s, in number v, in number longRang
   color = "NONE"
   If longRange = 1 Then
     greenV = 3
+    greenS = 45
     blueV = 7
+    blueS = 65
   Else
     greenV = 9
-    blueV = 10
+    greenS = 150
+    blueV = 15
+    blueS = 160
   EndIf
   
-  If h > 65 And h < 181 And s > 45 And v > greenV Then
+  If h > 65 And h < 175 And s > greenS And v > greenV Then
     color = "GREEN"
-  ElseIf h > 190 And h < 245 And s > 65 And v > blueV Then
+  ElseIf h > 190 And h < 245 And s > blueS And v > blueV Then
     color = "BLUE"
   ElseIf h > 25 And h < 50 And s > 45 Then
     color = "YELLOW"

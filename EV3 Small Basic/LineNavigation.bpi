@@ -132,12 +132,7 @@ Function FollowLine(in number basePower, in number distanceBefore, in number Unt
     eI = 0.8*eI + 0.05*error
     eOld = error
     
-    If basePower > 50 Then
-      u = 0.35*error '+ 0.4*eD  '+ 0.008*eI
-    Else
-      u = 0.3* error
-    EndIf
-    'u = 1.5* error
+    u = 0.5*error + 1.1*eD  '+ 0.008*eI
     
     If Math.Abs(error) > 30 Then
       power = basePower*0.8

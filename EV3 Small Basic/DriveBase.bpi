@@ -57,6 +57,10 @@ Function DriveForDistance(in number distance)
 EndFunction
 
 Function DriveForDistanceNoAcc(in number distance, in number speed)
+  If distance < 0 Then
+    distance *= -1
+    speed *= -1
+  EndIf
   Motor.MoveSteer(@MOTORS, speed, 0, distance *  @DISTANCE_FACTOR, "True")
 EndFunction
 

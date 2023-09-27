@@ -1,0 +1,79 @@
+folder "prjs" "WRO23"
+include "Grabber"
+include "DriveBase"
+include "ColorDetection"
+
+MOTOR_GRABBER = "D"
+
+LCD.Clear()
+Sensor.SetMode(BLOCK_SENSOR, 4)
+Motor.Stop(MOTORS,"True")
+CalibrateGrabber()
+'DriveForDistance(MOTORS,200, 50)
+'Program.Delay(1000)
+'DriveForDistance(MOTORS,-200, 50)
+'Program.Delay(1000)
+
+Sub CollectAll
+  Motor.StartSteer(MOTORS, 12, 0)
+  searchOver = 0
+  blockColor = "NONE"
+  maxDistanceToSearch = 90 ' mm
+  blockOffset = 55 ' mm
+  
+  pos0 = Motor.GetCount(MOTOR_LEFT)
+  found = 0
+  
+  Time.Reset1()
+  
+  While searchOver = 0
+    ReadColor(BLOCK_SENSOR, SHORT_RANGE, SHOW_DEBUG, blockColor)
+    If (blockColor<>"NONE") Then
+      Motor.Stop(MOTORS, "True")
+      Speaker.Tone(100, 5000, 100)
+      ReadColorRobust(BLOCK_SENSOR, SHORT_RANGE, blockColor)
+      LCD.Text(1, 10, 100, 1, "rob. color = " + blockColor + "  ")
+      SayColor(blockColor, 0)
+      DriveForDistanceNoAcc(blockOffset, 10)
+      GrabAndDrop()
+      found += 1
+      'Program.Delay(1000)
+      If found = 4 Then
+        searchOver = 1
+      Else ' start for the next
+        pos0 = Motor.GetCount(@MOTOR_LEFT)
+        Speaker.Tone(100, 3000, 100)
+        Motor.StartSteer(@MOTORS, 10, 0)
+      EndIf
+    EndIf
+    
+    If found = 4 Then
+      searchOver = 1
+    EndIf
+    
+    encLeft = Motor.GetCount(@MOTOR_LEFT)
+    diff = Math.Abs(encLeft - pos0)
+    If diff > @DISTANCE_FACTOR * maxDistanceToSearch Then
+      Motor.Stop(MOTORS, "True")
+      Speaker.Tone(100, 300, 500)
+      searchOver = 1
+    EndIf
+  EndWhile
+  
+  LCD.Clear()
+  LCD.Text(1, 10, 100, 1, "timer " + Time.Get1() + "  ")
+  
+EndSub
+
+CollectAll()
+Program.Delay(1000)
+
+
+While "True"
+  LCD.Text(1, 10, 100, 1, "ang = " + Motor.GetCount(MOTOR_GRABBER) + "  ")
+  Program.Delay(100)
+  If Text.IsSubText( Buttons.Current, "L") Then
+    Speaker.Tone(100, 3000, 40)
+    GrabAndDrop()
+  EndIf
+EndWhile
