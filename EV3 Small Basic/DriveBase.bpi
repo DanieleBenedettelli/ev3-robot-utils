@@ -7,6 +7,8 @@ WHEELBASE = 178 ' mm
 DISTANCE_FACTOR = 2.03 ' 114.591559/WHEEL_DIAMETER
 TURNING_FACTOR = 3.18 ' WHEELBASE / WHEEL_DIAMETER
 
+Motor.Invert(MOTOR_LEFT)
+
 Function SpinRight(in number degrees)
   Spin(@MOTORS, Math.Abs(degrees), -40)
 EndFunction
@@ -17,12 +19,12 @@ EndFunction
 
 Function ArcRight(in number degrees) ' posive makes an arc forward
   Motor.Stop(@MOTORS, "True")
-  Pivot(@RIGHT_MOTOR, degrees, 90)
+  Pivot(@MOTOR_RIGHT, degrees, 75)
 EndFunction
 
 Function ArcLeft(in number degrees) ' posive makes an arc forward
   Motor.Stop(@MOTORS, "True")
-  Pivot(@LEFT_MOTOR, degrees, 90)
+  Pivot(@MOTOR_LEFT, degrees, 75)
 EndFunction
 
 Function Pivot(in string MOTOR, in number degrees, in number maxSpeed)
@@ -51,7 +53,7 @@ Function Spin(in string MOTORS, in number degrees, in number speed)
 EndFunction
 
 Function DriveForDistance(in number distance)
-  DriveForDistance(@MOTORS, distance, 55)
+  DriveForDistance(distance, 65)
 EndFunction
 
 Function DriveForDistanceNoAcc(in number distance, in number speed)
@@ -59,11 +61,11 @@ Function DriveForDistanceNoAcc(in number distance, in number speed)
 EndFunction
 
 ' acceleration with wheel sync
-Function DriveForDistance ( in string MOTORS, in number distance, in number maxPower )
+Function DriveForDistance (in number distance, in number maxPower )
   ' Functions do not see global variables.
   
-  MOTOR_RIGHT = Text.GetSubText(MOTORS,1,1)
-  MOTOR_LEFT = Text.GetSubText(MOTORS,2,1)
+  'MOTOR_RIGHT = Text.GetSubText(@MOTORS,1,1)
+  'MOTOR_LEFT = Text.GetSubText(@MOTORS,2,1)
   
   'LCD.Text(1,1,1,2, "M: " + MOTOR_LEFT + "  " + MOTOR_RIGHT)
   'MOTORS = MOTOR_RIGHT + MOTOR_LEFT
@@ -73,11 +75,11 @@ Function DriveForDistance ( in string MOTORS, in number distance, in number maxP
   EndIf
   
   angleToGo = @DISTANCE_FACTOR * distance
-  Motor.ResetCount(MOTOR_LEFT)
-  Motor.ResetCount(MOTOR_RIGHT)
+  'Motor.ResetCount(MOTOR_LEFT)
+  'Motor.ResetCount(MOTOR_RIGHT)
   
   power = 0
-  pos0 = Motor.GetCount(MOTOR_LEFT)
+  pos0 = Motor.GetCount(@MOTOR_LEFT)
   angleRamp = Math.Round(0.3*angleToGo)
   
   If Math.Abs(angleRamp) < 20 Then
@@ -92,8 +94,8 @@ Function DriveForDistance ( in string MOTORS, in number distance, in number maxP
   
   While diff < Math.Abs(angleToGo)
     
-    encRight = Motor.GetCount(MOTOR_RIGHT)
-    encLeft = Motor.GetCount(MOTOR_LEFT)
+    encRight = Motor.GetCount(@MOTOR_RIGHT)
+    encLeft = Motor.GetCount(@MOTOR_LEFT)
     diff = Math.Abs(encLeft - pos0)
     left = angleToGo - diff
     
@@ -102,9 +104,9 @@ Function DriveForDistance ( in string MOTORS, in number distance, in number maxP
     powerRight = power + compensation
     powerLeft = power - compensation
     
-    Motor.StartSync(MOTORS, powerRight, powerLeft)
+    Motor.StartSync(@MOTORS, powerRight, powerLeft)
     
-    LCD.Text(1,1,60,2, "diff: " + diff + "   " )
+    'LCD.Text(1,1,60,2, "diff: " + diff + "   " )
     'LCD.Text(1,1,80,2, "power: " + power + "  ")
     
     ' accel/decel management
@@ -116,14 +118,14 @@ Function DriveForDistance ( in string MOTORS, in number distance, in number maxP
       'LCD.Text(1,1,100,2, "DECEL")
     EndIf
     
-    If angleToGo > 0 And power < 10 Then
-      power = 10
+    If angleToGo > 0 And power < 15 Then
+      power = 15
     EndIf
-    If angleToGo < 0 And power > -10 Then
-      power = -10
+    If angleToGo < 0 And power > -15 Then
+      power = -15
     EndIf
     Program.Delay(1)
   EndWhile
-  Motor.Stop(MOTORS,"True")
+  Motor.Stop(@MOTORS,"True")
   
 EndFunction

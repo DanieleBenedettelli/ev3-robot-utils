@@ -1,17 +1,23 @@
 
-Function ReadColorRobust(in number SensorPort, out string color)
+BLOCK_SENSOR = 2
+LONG_RANGE = 1
+SHORT_RANGE = 0
+SHOW_DEBUG = 1
+NO_DEBUG = 0
+
+Function ReadColorRobust(in number SensorPort, in number longRange, out string color)
   COLORS[0] = "BLUE"
   COLORS[1] = "GREEN"
   COLORS[2] = "WHITE"
-  ReadColorRobust(sensorPort, COLORS, 3, 10, color)
+  ReadColorRobust(sensorPort, COLORS, 3, 10, longRange, color)
 EndFunction
 
-Function ReadColorRobust(in number sensorPort, in string[] COLORS, in number LEN, in number samples, out string color)
-
+Function ReadColorRobust(in number sensorPort, in string[] COLORS, in number LEN, in number samples, in number longRange, out string color)
+  
   count = Vector.Init(LEN, 0)
   
   For s = 0 To samples
-    ReadColor(sensorPort, 1, sample)
+    ReadColor(sensorPort, longRange, 0, sample)
     For k = 0 To LEN
       If sample = COLORS[k] Then
         count[k] = count[k] + 1
@@ -19,27 +25,27 @@ Function ReadColorRobust(in number sensorPort, in string[] COLORS, in number LEN
     EndFor
   EndFor
   maxIndex = 1
-
+  
   FindMaxIndex(count, LEN, maxIndex)
   color = COLORS[maxIndex]
 EndFunction
 
 Function FindMaxIndex(in number[] array, in number length, out number maxIndex)
-  LCD.Text(1,1,10,1, "a[0]="+array[0])
-  LCD.Text(1,1,20,1, "a[1]="+array[1])
+  'LCD.Text(1,1,10,1, "a[0]="+array[0])
+  'LCD.Text(1,1,20,1, "a[1]="+array[1])
   maxVal = array[0]
   maxIndex = 0
-
+  
   For i = 1 To length
     If array[i] > maxVal Then
       maxVal = array[i]
       maxIndex = i
     EndIf
   EndFor
-  LCD.Text(1,1,30,1, "max index: "+ maxIndex)
+  'LCD.Text(1,1,30,1, "max index: "+ maxIndex)
 EndFunction
 
-Function ReadColor( in number sensorPort, in number debug, out string color)
+Function ReadColor( in number sensorPort, in number longRange, in number debug, out string color)
   raw = Sensor.ReadRaw(sensorPort,3)
   r = raw[0]
   g = raw[1]
@@ -49,14 +55,22 @@ Function ReadColor( in number sensorPort, in number debug, out string color)
     WriteHSVToScreen(h , s , v)
   EndIf
   RGBtoHSV(r , g , b , h , s , v)
-  ClassifyColor(h , s , v, color)
+  ClassifyColor(h , s , v, longRange, color)
 EndFunction
 
-Function ClassifyColor(in number h, in number s, in number v, out string color)
+Function ClassifyColor(in number h, in number s, in number v, in number longRange, out string color)
   color = "NONE"
-  If h > 65 And h < 170 And s > 45 And v > 10 Then
+  If longRange = 1 Then
+    greenV = 3
+    blueV = 7
+  Else
+    greenV = 9
+    blueV = 10
+  EndIf
+  
+  If h > 65 And h < 181 And s > 45 And v > greenV Then
     color = "GREEN"
-  ElseIf h > 190 And h < 245 And s > 65 And v > 10 Then
+  ElseIf h > 190 And h < 245 And s > 65 And v > blueV Then
     color = "BLUE"
   ElseIf h > 25 And h < 50 And s > 45 Then
     color = "YELLOW"
@@ -113,4 +127,18 @@ Function WriteHSVToScreen (in number h, in number s, in number v)
   LCD.Text(1, 80, 10, 1, "H = " + h + "  ")
   LCD.Text(1, 80, 30, 1, "S = " + s + "  ")
   LCD.Text(1, 80, 50, 1, "V = " + v + "  ")
+EndFunction
+
+Function SayColor(in string color, in number waitForCompletion)
+  If color = "BLUE" Then
+    Speaker.Play(100, "Blue")
+  ElseIf color = "GREEN" Then
+    Speaker.Play(100, "Green")
+  ElseIf color = "WHITE" Then
+    Speaker.Play(100, "White")
+  EndIf
+  
+  If waitForCompletion <> 0 Then
+    Speaker.Wait()
+  EndIf
 EndFunction

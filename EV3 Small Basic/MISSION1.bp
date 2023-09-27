@@ -1,0 +1,227 @@
+folder "prjs" "WRO23"
+include "ColorDetection"
+include "DriveBase"
+include "LineNavigation"
+include "Grabber"
+
+LCD.Clear()
+
+SLOW_SPEED = 20
+NORMAL_SPEED = 50
+FAST_SPEED = 70
+MOTOR_RIGHT = "C"
+MOTOR_LEFT = "B"
+MOTOR_RAMP = "A"
+MOTORS = MOTOR_RIGHT + MOTOR_LEFT
+BLOCK_SENSOR = 2
+LINE_SENSOR_RIGHT = 4
+LINE_SENSOR_LEFT = 3
+
+WHEEL_DIAMETER = 56 ' mm
+WHEELBASE = 178 ' mm
+DISTANCE_FACTOR = 2.03 ' 114.591559/WHEEL_DIAMETER
+TURNING_FACTOR = 3.18 ' WHEELBASE / WHEEL_DIAMETER
+
+DISTANCE_LARGE_BOAT = 220
+DISTANCE_BLOCK1 = 150
+DISTANCE_BLOCK2 = 200
+DISTANCE_FUEL = 90
+DISTANCE_FUEL_BACK = 85
+
+Motor.Invert(MOTOR_LEFT)
+Sensor.SetMode(LINE_SENSOR_LEFT, 0) ' set reflected light intensity mode
+Sensor.SetMode(LINE_SENSOR_RIGHT, 0) ' set reflected light intensity mode
+Sensor.SetMode(BLOCK_SENSOR, 4) ' RGB mode
+
+Function DriveAndScanOrder(in number distance, in number distanceBlock1, in number distanceBlock2, out string order1, out string order2)
+  order1 = "NONE"
+  order2 = "NONE"
+  REFERENCE = 70
+  
+  'angleToGo = @DISTANCE_FACTOR * distance
+  Motor.ResetCount(@MOTOR_LEFT)
+  Motor.ResetCount(@MOTOR_RIGHT)
+  pos0 = Motor.GetCount(@MOTOR_LEFT)
+  
+  done = 0
+  power = 60
+  
+  While done = 0
+    ' distance measurement
+    encRight = Motor.GetCount(@MOTOR_RIGHT)
+    encLeft = Motor.GetCount(@MOTOR_LEFT)
+    travelDone = Math.Abs(encLeft - pos0) / @DISTANCE_FACTOR
+    
+    readingL = Sensor.ReadPercent(@LINE_SENSOR_LEFT)
+    error = REFERENCE - readingL
+    'error = readingL - readingR ' differential reading remove the need for calibration
+    'eD = error - eOld
+    'eI = 0.8*eI + 0.05*error
+    'eOld = error
+    'u = -0.3*error '+ 0.008*eI + 0.15*eD
+    
+    'compensation = 0.5*(encRight - encLeft)
+    compensation = 0.35*error
+    
+    powerRight = power + compensation
+    powerLeft = power - compensation
+    
+    'Motor.StartSync(@MOTORS, powerRight, powerLeft)
+    Motor.StartPower(@MOTOR_LEFT, powerLeft)
+    Motor.StartPower(@MOTOR_RIGHT, powerRight)
+    
+    LCD.Text(1, 10, 60, 1, "travel = " + Math.round(travelDone)+ " mm  ")
+    
+    If travelDone > distanceBlock1-15 Then
+      power = 40
+    ElseIf travelDone > distanceBlock2+20 Then
+      power = 60
+    EndIf
+    
+    If order1 = "NONE" And (distanceBlock1-5) < travelDone And travelDone < (distanceBlock1+5) Then
+      ReadColor(@BLOCK_SENSOR, 1, 1, color)
+      If color <> "NONE" Then
+        ReadColorRobust(@BLOCK_SENSOR, 1, robustColor)
+        If robustColor <> "NONE" Then
+          order1 = robustColor
+          'Motor.Stop(@MOTORS,"True")
+          'SayColor(order1,0)
+          'Program.Delay(1000)
+        EndIf
+      EndIf
+    EndIf
+    
+    If order2 = "NONE" And (distanceBlock2-5) < travelDone And travelDone < (distanceBlock2+5) Then
+      ReadColor(@BLOCK_SENSOR, 1, 1, color)
+      If color <> "NONE" Then
+        ReadColorRobust(@BLOCK_SENSOR, 1, robustColor)
+        If robustColor <> "NONE" Then
+          order2 = robustColor
+          'Motor.Stop(@MOTORS,"True")
+          'SayColor(order2,0)
+          'Program.Delay(1000)
+        EndIf
+      EndIf
+    EndIf
+    
+    If travelDone > distance Then
+      Motor.Stop(@MOTORS,"True")
+      'Speaker.Tone(100,2000, 40)
+      done = 1
+    EndIf
+    
+  EndWhile
+  Motor.Stop(@MOTORS, "True")
+  'Speaker.Wait()
+  'Speaker.Tone(100,2000, 40)
+EndFunction
+
+Sub CollectAll
+  Motor.StartSteer(MOTORS, 12, 0)
+  searchOver = 0
+  blockColor = "NONE"
+  maxDistanceToSearch = 70 ' mm
+  blockOffset = 50 ' mm
+  
+  pos0 = Motor.GetCount(MOTOR_LEFT)
+  found = 0
+  
+  Time.Reset1()
+  
+  While searchOver = 0
+    ReadColor(BLOCK_SENSOR, SHORT_RANGE, SHOW_DEBUG, blockColor)
+    If (blockColor<>"NONE") Then
+      Motor.Stop(MOTORS, "True")
+      Speaker.Tone(100, 5000, 100)
+      ReadColorRobust(BLOCK_SENSOR, SHORT_RANGE, blockColor)
+      LCD.Text(1, 10, 100, 1, "rob. color = " + blockColor + "  ")
+      SayColor(blockColor, 0)
+      DriveForDistanceNoAcc(blockOffset, 15)
+      GrabAndDrop()
+      found += 1
+      'Program.Delay(1000)
+      If found = 4 Then
+        searchOver = 1
+      Else ' start for the next
+        pos0 = Motor.GetCount(@MOTOR_LEFT)
+        Speaker.Tone(100, 3000, 100)
+        Motor.StartSteer(@MOTORS, 20, 0)
+      EndIf
+    EndIf
+    
+    If found = 4 Then
+      searchOver = 1
+    EndIf
+    
+    encLeft = Motor.GetCount(@MOTOR_LEFT)
+    diff = Math.Abs(encLeft - pos0)
+    If diff > @DISTANCE_FACTOR * maxDistanceToSearch Then
+      Motor.Stop(MOTORS, "True")
+      Speaker.Tone(100, 300, 500)
+      searchOver = 1
+    EndIf
+  EndWhile
+  
+  LCD.Clear()
+  LCD.Text(1, 10, 100, 1, "timer " + Time.Get1() + "  ")
+  
+EndSub
+
+order1 = "NONE"
+order2 = "NONE"
+
+' CALIBRATION
+'Motor.StartPower(MOTOR_RAMP,40)
+'Program.Delay(1000)
+'Motor.Stop(MOTOR_RAMP, "True")
+'Motor.Stop(MOTORS, "True")
+'CalibrateGrabber()
+
+Time.Reset9()
+
+DriveUntilLine(LINE_SENSOR_LEFT, 30, 0, 65, 22)
+'BackUpAlignCrossing()
+'Program.Delay(1000)
+DriveAndScanOrder(DISTANCE_LARGE_BOAT, DISTANCE_BLOCK1, DISTANCE_BLOCK2, order1, order2)
+'FollowLine(25, 0, 1, 1)
+'Program.Delay(1000)
+'BackUpAlignCrossing()
+
+LCD.Clear()
+LCD.Text(1, 10, 30, 1, "order1 = " + order1 + "  ")
+LCD.Text(1, 10, 40, 1, "order2 = " + order2 + "  ")
+'SayColor(order1, 1)
+'SayColor(order2, 1)
+'Program.Delay(5000)
+
+' SPINGI E RIFORNISCI BARCA
+DriveForDistance( DISTANCE_FUEL, 50 )
+'Program.Delay(100)
+DriveForDistanceNoAcc( DISTANCE_FUEL_BACK, -60)
+'Program.Delay(1000)
+' 1 secondo fino a qui
+
+' VAI A CONTAINER A BATTUTA
+SpinRight(90)
+'Program.Delay(500)
+DriveForDistanceNoAcc(220, 70)
+'FollowLine(40, 200, 0, 1)
+'Program.Delay(500)
+SpinRight(85)
+'Program.Delay(500)
+DriveForDistanceNoAcc(470,-60)
+Program.Delay(100)
+DriveForDistanceNoAcc(50,-50)
+Program.Delay(100)
+DriveForDistanceNoAcc(40,20)
+ArcRight(90)
+
+' VAI A CONTAINER CON SEGUILINEA
+'Program.Delay(2000)
+'FollowLine(FAST_SPEED, 450, 1, 0)
+'DriveForDistance( 20, 30 )
+'SpinLeft(90)
+'FollowLine(40, 350, 0, 1)
+
+LCD.Text(1, 2, 80, 2, "time = " + Time.Get9()/1000 + "  ")
+Program.Delay(5000)
