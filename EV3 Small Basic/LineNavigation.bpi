@@ -129,10 +129,10 @@ Function FollowLine(in number basePower, in number distanceBefore, in number Unt
     error = (REFERENCE - readingL)
     'error = readingL - readingR ' differential reading remove the need for calibration
     eD = error - eOld
-    eI = 0.8*eI + 0.05*error
+    'eI = 0.8*eI + 0.05*error
     eOld = error
     
-    u = 0.5*error + 1.1*eD  '+ 0.008*eI
+    u = 0.5*error + 1.1*eD  ' THIS WORKS!!!!               + 0.008*eI
     
     If Math.Abs(error) > 30 Then
       power = basePower*0.8
@@ -172,7 +172,7 @@ Function FollowLine(in number basePower, in number distanceBefore, in number Unt
       Motor.StartPower(@MOTOR_LEFT, power - u)
       timeLoop = Time.Get2()
       'LCD.Text(1,1,90,1,"T: "+timeLoop+" ms  ")
-      Program.Delay(20-timeLoop)
+      Program.Delay(5-timeLoop)
     EndIf
     
   EndWhile

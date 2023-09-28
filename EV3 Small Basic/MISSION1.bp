@@ -4,8 +4,6 @@ include "DriveBase"
 include "LineNavigation"
 include "Grabber"
 
-LCD.Clear()
-
 SLOW_SPEED = 20
 NORMAL_SPEED = 50
 FAST_SPEED = 70
@@ -28,6 +26,7 @@ DISTANCE_BLOCK2 = 200
 DISTANCE_FUEL = 90
 DISTANCE_FUEL_BACK = 85
 
+LCD.Clear()
 Motor.Invert(MOTOR_LEFT)
 Sensor.SetMode(LINE_SENSOR_LEFT, 0) ' set reflected light intensity mode
 Sensor.SetMode(LINE_SENSOR_RIGHT, 0) ' set reflected light intensity mode
@@ -62,7 +61,7 @@ Function DriveAndScanOrder(in number distance, in number distanceBlock1, in numb
     'u = -0.3*error '+ 0.008*eI + 0.15*eD
     
     'compensation = 0.5*(encRight - encLeft)
-    compensation = 0.2*error '+ 0.4*eD
+    compensation = 0.5*error + 1.1*eD
     
     powerRight = power + compensation
     powerLeft = power - compensation
@@ -110,7 +109,7 @@ Function DriveAndScanOrder(in number distance, in number distanceBlock1, in numb
       'Speaker.Tone(100,2000, 40)
       done = 1
     EndIf
-    
+    Program.Delay(4)
   EndWhile
   Motor.Stop(@MOTORS, "True")
   'Speaker.Wait()
@@ -213,17 +212,6 @@ order2 = "NONE"
 greenBlocksCount = 0
 blueBlocksCount = 0
 
-FollowLine(70, 300, 1, 1)
-DriveForDistanceNoAcc(10, 10)
-FollowLine(70, 200, 1, 1)
-'DriveForDistanceNoAcc(20, 10)
-ArcRight(135) ' DEBUG PIVOT
-DriveUntilLine(@LINE_SENSOR_LEFT, 40, 1, 60, 20)
-
-Motor.Stop(MOTORS, "True")
-
-Program.End()
-
 ' CALIBRATION
 Motor.Stop(MOTORS, "True")
 Motor.StartPower(MOTOR_RAMP,30)
@@ -278,9 +266,27 @@ DriveForDistanceNoAcc(30,20) ' determina la distanza dai blocchi
 ArcRight(90)
 LCD.Text(1, 2, 80, 2, "time: " + Time.Get9()/1000 + "  ")
 CollectBlocks()
+
+' VAI A BARCA PICCOLA
 SpinRight(90)
 FollowLine(40, 300, 1, 0)
 FollowLine(40, 330, 1, 1)
+
+
+FollowLine(70, 300, 1, 0 ) ' coast at intersection, don't brake
+'DriveForDistanceNoAcc(10, 10)
+FollowLine(70, 200, 1, 1) ' keep following
+DriveForDistanceNoAcc(20, 10)
+ArcLeft(135) 
+DriveUntilLine(@LINE_SENSOR_LEFT, 40, 1, 60, 20)
+
+' aggancia linea per uscire dal porto
+' lascia barca 
+' ArcRight(-10) ' SGANCIO
+
+'Motor.Stop(MOTORS, "True")
+
+'Program.End()
 
 ' VAI A CONTAINER CON SEGUILINEA
 'Program.Delay(2000)

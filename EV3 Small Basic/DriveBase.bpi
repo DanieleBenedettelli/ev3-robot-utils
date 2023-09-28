@@ -7,8 +7,6 @@ WHEELBASE = 178 ' mm
 DISTANCE_FACTOR = 2.03 ' 114.591559/WHEEL_DIAMETER
 TURNING_FACTOR = 3.18 ' WHEELBASE / WHEEL_DIAMETER
 
-Motor.Invert(MOTOR_LEFT)
-
 Function SpinRight(in number degrees)
   Spin(@MOTORS, Math.Abs(degrees), -40)
 EndFunction
@@ -17,28 +15,37 @@ Function SpinLeft(in number degrees)
   Spin(@MOTORS, Math.Abs(degrees), 40)
 EndFunction
 
-Function ArcRight(in number degrees) ' posive makes an arc forward
-  Motor.Stop(@MOTORS, "True")
-  Pivot(@MOTOR_RIGHT, degrees, 75)
-EndFunction
-
 Function ArcLeft(in number degrees) ' posive makes an arc forward
   Motor.Stop(@MOTORS, "True")
-  Pivot(@MOTOR_LEFT, degrees, 75)
+  Pivot(@MOTOR_RIGHT, degrees, 60)
 EndFunction
 
-Function Pivot(in string MOTOR, in number degrees, in number maxSpeed)
+Function ArcRight(in number degrees) ' posive makes an arc forward
+  Motor.Stop(@MOTORS, "True")
+  Pivot(@MOTOR_LEFT, degrees, 60)
+EndFunction
+
+Function Pivot(in string motor, in number degrees, in number maxSpeed)
   'LCD.Text(1,1,1,2, "M: " + MOTOR)
   total = 2*@TURNING_FACTOR*Math.Abs(degrees)
-  ramp = Math.Round(total*0.3)
-  steady = total - 2*ramp
+  ramp = Math.Round(total*0.2)
+  'LCD.Text(1,1,1,2, "total: " + total + "  " )
+  'LCD.Text(1,1,20,2, "ramp: " + ramp + "  " )
   If degrees < 0 Then
     maxSpeed = -1*maxSpeed
   EndIf
-  Motor.Schedule(MOTOR, maxSpeed, ramp, steady, ramp, "True")
-  'Motor.SchedulePower(MOTOR, maxPower, ramp, steady, ramp, "True")
-  'Motor.ScheduleSync(MOTORS, -speed, speed, degrees*TURNING_FACTOR, "True")
-  Motor.Wait(MOTOR)
+  If Math.Abs(ramp) < 70 Then ' small angle -> low speed, no ramps
+    'Speaker.Tone(100, 5000, 100)
+    ramp = 0
+    Motor.Move(motor, 15, total, "True")
+  Else
+    steady = total - 2*ramp
+    
+    Motor.Schedule(motor, maxSpeed, ramp, steady, ramp, "True")
+    'Motor.SchedulePower(MOTOR, maxPower, ramp, steady, ramp, "True")
+    'Motor.ScheduleSync(MOTORS, -speed, speed, degrees*TURNING_FACTOR, "True")
+    Motor.Wait(motor)
+  EndIf
   'While Motor.IsBusy(MOTOR)
   '  Program.Delay(10)
   'EndWhile
@@ -53,7 +60,7 @@ Function Spin(in string MOTORS, in number degrees, in number speed)
 EndFunction
 
 Function DriveForDistance(in number distance)
-  DriveForDistance(distance, 65)
+  DriveForDistance(distance, 70)
 EndFunction
 
 Function DriveForDistanceNoAcc(in number distance, in number speed)
@@ -79,8 +86,8 @@ Function DriveForDistance (in number distance, in number maxPower )
   EndIf
   
   angleToGo = @DISTANCE_FACTOR * distance
-  'Motor.ResetCount(MOTOR_LEFT)
-  'Motor.ResetCount(MOTOR_RIGHT)
+  Motor.ResetCount(@MOTOR_LEFT)
+  Motor.ResetCount(@MOTOR_RIGHT)
   
   power = 0
   pos0 = Motor.GetCount(@MOTOR_LEFT)
@@ -116,10 +123,11 @@ Function DriveForDistance (in number distance, in number maxPower )
     ' accel/decel management
     If diff < Math.Abs(angleRamp) Then
       power = maxPower*diff/angleRamp
+      LCD.Text(1,1,100,2, "acc:" + power + "  ")
     ElseIf diff > Math.Abs(angleToGo-angleRamp) Then
       power = maxPower*(angleToGo-diff)/angleRamp
       'Speaker.Tone(100,4000,5)
-      'LCD.Text(1,1,100,2, "DECEL")
+      LCD.Text(1,1,100,2, "dec:" + power + "  ")
     EndIf
     
     If angleToGo > 0 And power < 15 Then
