@@ -9,13 +9,13 @@ include "ColorDetection"
 'Program.Delay(10000)
 SENSOR_PORT = 2
 Sensor.SetMode(SENSOR_PORT, 4)
-
+range = SHORT_RANGE
 LCD.Clear()
 While "true"
-  ReadColor(SENSOR_PORT, LONG_RANGE, SHOW_DEBUG, color)
+  ReadColor(SENSOR_PORT, range, SHOW_DEBUG, color)
   LCD.Text(1, 10, 80, 1, "color = " + color+ "  ")
   If ( color <> "NONE" ) Then
-    ReadColorRobust(SENSOR_PORT, LONG_RANGE, robustColor)
+    ReadColorRobust(SENSOR_PORT, range, robustColor)
     LCD.Text(1, 10, 100, 1, "rob. color = " + robustColor+ "  ")  
     
     If robustColor = "BLUE" Then
