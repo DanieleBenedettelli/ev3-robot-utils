@@ -96,15 +96,15 @@ Function BackUpAlignCrossing()
 EndFunction
 
 Function FollowLineForDistance(in number distance)
-  FollowLine(70, distance, 0, 1)
+  FollowLine(60, distance, 0, 1)
 EndFunction
 
 Function FollowLineUntilCrossing()
-  FollowLine(70, 0, 1, 1)
+  FollowLine(60, 0, 1, 1)
 EndFunction
 
 Function FollowLineForDistanceUntilCrossing(in number distance)
-  FollowLine(70, distance, 1, 1)
+  FollowLine(60, distance, 1, 1)
 EndFunction
 
 Function FollowLine(in number basePower, in number distanceBefore, in number UntilCrossing, in number brake)
@@ -132,7 +132,7 @@ Function FollowLine(in number basePower, in number distanceBefore, in number Unt
     'eI = 0.8*eI + 0.05*error
     eOld = error
     
-    u = 0.5*error + 1.1*eD  ' THIS WORKS!!!!               + 0.008*eI
+    u = 0.35*error + 1.5*eD  ' THIS WORKS @ 100Hz!!!!               + 0.008*eI
     
     If Math.Abs(error) > 30 Then
       power = basePower*0.8
@@ -172,7 +172,7 @@ Function FollowLine(in number basePower, in number distanceBefore, in number Unt
       Motor.StartPower(@MOTOR_LEFT, power - u)
       timeLoop = Time.Get2()
       'LCD.Text(1,1,90,1,"T: "+timeLoop+" ms  ")
-      Program.Delay(5-timeLoop)
+      Program.Delay(10-timeLoop)
     EndIf
     
   EndWhile

@@ -32,10 +32,33 @@ Sensor.SetMode(LINE_SENSOR_LEFT, 0) ' set reflected light intensity mode
 Sensor.SetMode(LINE_SENSOR_RIGHT, 0) ' set reflected light intensity mode
 Sensor.SetMode(BLOCK_SENSOR, 4) ' RGB mode
 
+
+
+FollowLine(70, 290, 1, 0 ) ' coast at intersection, don't brake
+Motor.MoveSteer(@MOTORS, 30, 0, 20 *  @DISTANCE_FACTOR, "False")
+'DriveForDistanceNoAcc(20, 20)
+FollowLine(50, 200, 0, 0) ' keep following
+DriveForDistanceNoAcc(70, 20)
+ArcLeft(135) 
+DriveUntilLine(@LINE_SENSOR_LEFT, 50, 1, 60, 20)
+ArcRight(45)
+DriveForDistanceNoAcc(40, 20)
+FollowLine(40, 100, 0, 1 )
+ArcRight(-15)
+ArcLeft(-15)
+' indietro fino a intersezione
+
+DriveForDistance(-150)
+SpinLeft(90)
+Program.Delay(500)
+Program.End()
+
+
+
 Function DriveAndScanOrder(in number distance, in number distanceBlock1, in number distanceBlock2, out string order1, out string order2)
   order1 = "NONE"
   order2 = "NONE"
-  REFERENCE = 70
+  REFERENCE = 65
   
   'angleToGo = @DISTANCE_FACTOR * distance
   Motor.ResetCount(@MOTOR_LEFT)
@@ -47,6 +70,7 @@ Function DriveAndScanOrder(in number distance, in number distanceBlock1, in numb
   eOld = 0
   
   While done = 0
+    Time.Reset2()' LOOP TIMER
     ' distance measurement
     encRight = Motor.GetCount(@MOTOR_RIGHT)
     encLeft = Motor.GetCount(@MOTOR_LEFT)
@@ -61,7 +85,7 @@ Function DriveAndScanOrder(in number distance, in number distanceBlock1, in numb
     'u = -0.3*error '+ 0.008*eI + 0.15*eD
     
     'compensation = 0.5*(encRight - encLeft)
-    compensation = 0.5*error + 1.1*eD
+    compensation = 0.2*error '+ 1.5*eD  ' THIS WORKS @ 100Hz!!!!
     
     powerRight = power + compensation
     powerLeft = power - compensation
@@ -109,8 +133,11 @@ Function DriveAndScanOrder(in number distance, in number distanceBlock1, in numb
       'Speaker.Tone(100,2000, 40)
       done = 1
     EndIf
-    Program.Delay(4)
+    timeLoop = Time.Get2()
+    LCD.Text(1, 10, 50, 2, "T: " + timeLoop + "  ")
+    Program.Delay(10-timeLoop)
   EndWhile
+  
   Motor.Stop(@MOTORS, "True")
   'Speaker.Wait()
   'Speaker.Tone(100,2000, 40)
@@ -214,9 +241,9 @@ blueBlocksCount = 0
 
 ' CALIBRATION
 Motor.Stop(MOTORS, "True")
-Motor.StartPower(MOTOR_RAMP,30)
-Program.Delay(1000)
-Motor.Stop(MOTOR_RAMP, "True")
+'Motor.StartPower(MOTOR_RAMP,30)
+'Program.Delay(1000)
+'Motor.Stop(MOTOR_RAMP, "True")
 CalibrateGrabber()
 
 ' ATTESA PULSANTE
@@ -240,7 +267,7 @@ SayColor(order2, 1)
 'Program.Delay(2000)
 
 ' SPINGI E RIFORNISCI BARCA
-DriveForDistance( DISTANCE_FUEL, 50 )
+DriveForDistance( DISTANCE_FUEL, 40 )
 'Program.Delay(100)
 DriveForDistanceNoAcc( DISTANCE_FUEL_BACK, -60)
 'Program.Delay(1000)
@@ -249,36 +276,32 @@ DriveForDistanceNoAcc( DISTANCE_FUEL_BACK, -60)
 ' VAI A CONTAINER A BATTUTA
 SpinRight(90)
 'Program.Delay(500)
-DriveForDistanceNoAcc(240, 70)
+FollowLine(50, 240, 0, 1)
+'DriveForDistanceNoAcc(240, 70)
 'FollowLine(40, 200, 0, 1)
 'Program.Delay(500)
-SpinRight(85)
+SpinRight(90)
 'Program.Delay(500)
 DriveForDistanceNoAcc(460,-60)
-Program.Delay(100)
+'Program.Delay(100)
 Motor.StartPower(MOTORS,-50)
 Program.Delay(400)
 Motor.Stop(MOTORS,"True")
-
+Program.Delay(100)
 'DriveForDistanceNoAcc(50,-50) ' a battuta
-'Program.Delay(100)
-DriveForDistanceNoAcc(30,20) ' determina la distanza dai blocchi
-ArcRight(90)
+DriveForDistanceNoAcc(35,20) ' determina la distanza dai blocchi
+ArcLeft(90)
 LCD.Text(1, 2, 80, 2, "time: " + Time.Get9()/1000 + "  ")
 CollectBlocks()
 
 ' VAI A BARCA PICCOLA
 SpinRight(90)
-FollowLine(40, 300, 1, 0)
-FollowLine(40, 330, 1, 1)
-
-
 FollowLine(70, 300, 1, 0 ) ' coast at intersection, don't brake
-'DriveForDistanceNoAcc(10, 10)
-FollowLine(70, 200, 1, 1) ' keep following
-DriveForDistanceNoAcc(20, 10)
+FollowLine(50, 200, 0, 1) ' keep following
+DriveForDistanceNoAcc(30, 10)
 ArcLeft(135) 
 DriveUntilLine(@LINE_SENSOR_LEFT, 40, 1, 60, 20)
+'Program.End()
 
 ' aggancia linea per uscire dal porto
 ' lascia barca 
@@ -286,7 +309,7 @@ DriveUntilLine(@LINE_SENSOR_LEFT, 40, 1, 60, 20)
 
 'Motor.Stop(MOTORS, "True")
 
-'Program.End()
+
 
 ' VAI A CONTAINER CON SEGUILINEA
 'Program.Delay(2000)

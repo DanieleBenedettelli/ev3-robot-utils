@@ -17,12 +17,12 @@ EndFunction
 
 Function ArcLeft(in number degrees) ' posive makes an arc forward
   Motor.Stop(@MOTORS, "True")
-  Pivot(@MOTOR_RIGHT, degrees, 60)
+  Pivot(@MOTOR_RIGHT, degrees, 70)
 EndFunction
 
 Function ArcRight(in number degrees) ' posive makes an arc forward
   Motor.Stop(@MOTORS, "True")
-  Pivot(@MOTOR_LEFT, degrees, 60)
+  Pivot(@MOTOR_LEFT, degrees, 70)
 EndFunction
 
 Function Pivot(in string motor, in number degrees, in number maxSpeed)
@@ -123,11 +123,11 @@ Function DriveForDistance (in number distance, in number maxPower )
     ' accel/decel management
     If diff < Math.Abs(angleRamp) Then
       power = maxPower*diff/angleRamp
-      LCD.Text(1,1,100,2, "acc:" + power + "  ")
+      'LCD.Text(1,1,100,2, "acc:" + power + "  ")
     ElseIf diff > Math.Abs(angleToGo-angleRamp) Then
       power = maxPower*(angleToGo-diff)/angleRamp
       'Speaker.Tone(100,4000,5)
-      LCD.Text(1,1,100,2, "dec:" + power + "  ")
+      'LCD.Text(1,1,100,2, "dec:" + power + "  ")
     EndIf
     
     If angleToGo > 0 And power < 15 Then
