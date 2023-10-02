@@ -117,7 +117,7 @@ Function DriveUntilIntersection( in number speed)
     readingL = Sensor.ReadPercent(@LINE_SENSOR_LEFT)
     
     ' crossing detection
-    If readingL > 30 Or readingR > 30 Then
+    If readingL > 25 Or readingR > 25 Then
       Time.Reset1()
     EndIf
     If Time.Get1() > 40 Then
@@ -133,7 +133,7 @@ EndFunction
 Function FollowLine(in number basePower, in number distanceBefore, in number UntilCrossing, in number brake)
   eOld = 0
   error = 0
-  REFERENCE = 65
+  REFERENCE = 60
   eI = 0
   
   angleToGo = @DISTANCE_FACTOR * distanceBefore
@@ -171,7 +171,7 @@ Function FollowLine(in number basePower, in number distanceBefore, in number Unt
     diff = Math.Abs(encLeft - pos0)
     If angleToGo <> 0 Then
       If diff > angleToGo Then
-        power = 25
+        power = 18
         'Speaker.Tone(100, 2000, 10)
         If untilCrossing = 0 Then
           done = 1
@@ -207,5 +207,5 @@ Function FollowLine(in number basePower, in number distanceBefore, in number Unt
   Else
     Motor.Stop(@MOTORS,"False")
   EndIf
-  Speaker.Tone(100, 4000, 20)
+  'Speaker.Tone(100, 4000, 20)
 EndFunction

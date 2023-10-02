@@ -9,7 +9,7 @@ include "ColorDetection"
 'Program.Delay(10000)
 SENSOR_PORT = 2
 Sensor.SetMode(SENSOR_PORT, 4)
-range = SHORT_RANGE
+range = 1
 LCD.Clear()
 While "true"
   ReadColor(SENSOR_PORT, range, SHOW_DEBUG, color)

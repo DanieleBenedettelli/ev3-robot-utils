@@ -15,20 +15,26 @@ Function SpinLeft(in number degrees)
   Spin(@MOTORS, Math.Abs(degrees), 40)
 EndFunction
 
-Function ArcLeftNoAcc(in number degrees)
-  speed = 50
+Function ArcLeftNoAcc(in number degrees, in number speed)
   If degrees < 0 Then
     speed *= -1
   EndIf
   Motor.Move(@MOTOR_RIGHT, speed, 2*@TURNING_FACTOR*Math.Abs(degrees), "True")
 EndFunction
 
-Function ArcRightNoAcc(in number degrees)
-  speed = 50
+Function ArcLeftNoAcc(in number degrees)
+  ArcLeftNoAcc(degrees, 50)
+EndFunction
+
+Function ArcRightNoAcc(in number degrees, in number speed)
   If degrees < 0 Then
     speed *= -1
   EndIf
   Motor.Move(@MOTOR_LEFT, speed, 2*@TURNING_FACTOR*Math.Abs(degrees), "True")
+EndFunction
+
+Function ArcRightNoAcc(in number degrees)
+  ArcRightNoAcc(degrees, 50)
 EndFunction
 
 Function ArcLeft(in number degrees) ' posive makes an arc forward

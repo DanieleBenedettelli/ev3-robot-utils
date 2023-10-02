@@ -31,7 +31,7 @@ While "True"
   'FollowUntilCrossingAndTurnLeft()
   FollowLine(40, 200, 1, 1)
   'FollowLineForDistanceUntilCrossing(480)
-  SpinRight(178)
+  SpinRight(180)
   'Program.Delay(100)
 EndWhile
 
