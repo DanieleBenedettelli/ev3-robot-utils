@@ -9,6 +9,8 @@ Function ReadColorRobust(in number SensorPort, in number longRange, out string c
   COLORS[0] = "BLUE"
   COLORS[1] = "GREEN"
   COLORS[2] = "WHITE"
+  COLORS[3] = "RED"
+  COLORS[4] = "YELLOW"
   ReadColorRobust(sensorPort, COLORS, 3, 10, longRange, color)
 EndFunction
 
@@ -68,7 +70,7 @@ Function ClassifyColor(in number h, in number s, in number v, in number longRang
   Else
     greenV = 9
     greenS = 150
-    blueV = 15
+    blueV = 20
     blueS = 160
   EndIf
   

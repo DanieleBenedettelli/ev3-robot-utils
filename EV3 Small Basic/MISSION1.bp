@@ -26,7 +26,6 @@ DISTANCE_BLOCK2 = 200
 DISTANCE_FUEL = 90
 DISTANCE_FUEL_BACK = 85
 
-
 DISTANCE_FIRST_BLOCK_LINE = 190
 DISTANCE_DOCK_LINE = 300
 
@@ -68,19 +67,6 @@ Sensor.SetMode(LINE_SENSOR_RIGHT, 0) ' set reflected light intensity mode
 Sensor.SetMode(BLOCK_SENSOR, 4) ' RGB mode
 Motor.ResetCount(MOTOR_GRABBER)
 Motor.ResetCount(MOTOR_RAMP)
-
-Motor.Stop(MOTORS,"True")
-'CalibrateGrabber()
-
-
-
-
-' AGGANCIA CONTAINER ROSSO
-
-' SCARICA TUTTI CONTAINER SU BARCA GRANDE MENTRE PARCHEGGI
-
-Program.Delay(500)
-Program.End()
 
 Function DriveAndScanOrder(in number distance, in number distanceBlock1, in number distanceBlock2, out string order1, out string order2)
   order1 = "NONE"
@@ -227,7 +213,6 @@ EndFunction
 ' distanza da dove parto a retromarcia col robot per prendere i blocchi per la barca grande
 ' e la linea dei container colorati
 
-
 Function CollectBlocksLargeBoat(in number direction, in number maxDistanceToSearch)
   
   searchOver = 0
@@ -251,18 +236,18 @@ Function CollectBlocksLargeBoat(in number direction, in number maxDistanceToSear
     ReadColor(@BLOCK_SENSOR, @SHORT_RANGE, @SHOW_DEBUG, blockColor)
     If (blockColor<>"NONE") Then
       Motor.Stop(@MOTORS, "True")
-
+      
       Speaker.Tone(100, 5000, 100)
       ReadColorRobust(@BLOCK_SENSOR, @SHORT_RANGE, blockColor)
       'LCD.Text(1, 10, 100, 1, "rob. color = " + blockColor + "  ")
       SayColor(blockColor, 0)
       
-      If blockColor = "GREEN" or blockColor = "BLUE" Then
+      If blockColor = "GREEN" Or blockColor = "BLUE" Then
         DriveForDistanceNoAcc(blockOffset, 15)
         GrabAndDrop()
         found += 1
-      'else
-       ' DriveForDistanceNoAcc(blockOffset, 15) ' supera il blocco ignorato
+        'else
+        ' DriveForDistanceNoAcc(blockOffset, 15) ' supera il blocco ignorato
       EndIf
       
       If found = 2 Then
@@ -282,25 +267,26 @@ Function CollectBlocksLargeBoat(in number direction, in number maxDistanceToSear
     diff = Math.Abs(encLeft - pos0)
     If diff > @DISTANCE_FACTOR * maxDistanceToSearch Then
       Motor.Stop(@MOTORS, "True")
-      Speaker.Tone(100, 300, 500)
+      Speaker.Tone(100, 300, 100)
       searchOver = 1
     EndIf
   EndWhile
   
   travelFromBeginning = Math.Abs((Motor.GetCount(@MOTOR_LEFT) - pos1 )/@DISTANCE_FACTOR)
   
-  'LCD.Clear()
-  'LCD.Text(1, 5, 30, 1, "d: " + travelFromBeginning + " mm ")
-  'LCD.Text(1, 5, 40, 1, "d: " + @DISTANCE_DOCK_LINE + " mm ")
-  Program.Delay(2999)
+  LCD.Clear()
+  LCD.Text(1, 5, 30, 1, "d: " + travelFromBeginning + " mm ")
+  LCD.Text(1, 5, 40, 1, "d: " + @DISTANCE_DOCK_LINE + " mm ")
+  Speaker.Tone(100, 5000, 1000)
+  Program.Delay(4000)
   
-  if travelFromBeginning > @DISTANCE_DOCK_LINE Then ' sono andato indietro oltre la linea nera
+  If travelFromBeginning > @DISTANCE_DOCK_LINE Then ' sono andato indietro oltre la linea nera
     'Speaker.Play(100, "Forward")
     DriveUntilLine(@LINE_SENSOR_LEFT, 20)
   Else
     'Speaker.Play(100, "Backward")
     DriveUntilLine(@LINE_SENSOR_LEFT, -20)
-    EndIf
+  EndIf
   
 EndFunction
 
@@ -382,6 +368,18 @@ Function CollectBlocksSmallBoat(in number direction, in number maxDistanceToSear
   
 EndFunction
 
+Sub sayOrders
+  SayColor(@order1, 1)
+  SayColor(@order2, 1)
+  Speaker.Wait()
+EndSub
+
+'  __  __    _    ___ _   _
+' |  \/  |  / \  |_ _| \ | |
+' | |\/| | / _ \  | ||  \| |
+' | |  | |/ ___ \ | || |\  |
+' |_|  |_/_/   \_\___|_| \_|
+
 order1 = "NONE"
 order2 = "NONE"
 greenBlocksCount = 0
@@ -389,12 +387,20 @@ blueBlocksCount = 0
 
 ' CALIBRATION
 Motor.Stop(MOTORS, "True")
-'Motor.StartPower(MOTOR_RAMP,30)
-'Program.Delay(1000)
-'Motor.Stop(MOTOR_RAMP, "True")
+Motor.StartPower(MOTOR_RAMP,30)
+Program.Delay(1000)
+Motor.Stop(MOTOR_RAMP, "True")
 CalibrateGrabber()
 
+
+CollectBlocksLargeBoat(SEARCH_BACK, 380)
+Program.End()
+
 ' ATTESA PULSANTE
+While Buttons.Current = ""
+  Program.Delay(100)
+EndWhile
+Speaker.Tone(100,3000, 40)
 
 Time.Reset9()
 
@@ -405,8 +411,9 @@ LCD.Clear()
 LCD.Text(1, 10, 30, 1, "order1 = " + order1 + "  ")
 LCD.Text(1, 10, 40, 1, "order2 = " + order2 + "  ")
 
-SayColor(order1, 1)
-SayColor(order2, 1)
+Thread.Run = sayOrders ' non bloccante
+'SayColor(order1, 1)
+'SayColor(order2, 1)
 'Program.Delay(2000)
 
 ' SPINGI E RIFORNISCI BARCA
@@ -473,6 +480,8 @@ SpinRight(90)
 DriveForDistanceNoAcc(-45, 30 ) ' distance, speed
 GrabAndDrop()
 
+LCD.Text(1, 2, 100, 2, "time: " + Time.Get9()/1000 + "  ")
+
 ' prendi blocchi colorati rimasti
 DriveForDistanceNoAcc(-150, 70)
 ArcLeft(-90)
@@ -483,7 +492,11 @@ Motor.Stop(MOTORS,"True")
 DriveForDistanceNoAcc(35,20) ' primo parametro determina la distanza dai blocchi
 ArcLeft(90)
 
+LCD.Text(1, 2, 100, 2, "time: " + Time.Get9()/1000 + "  ")
+
 CollectBlocksLargeBoat(SEARCH_BACK, 380)
+
+LCD.Text(1, 2, 100, 2, "time: " + Time.Get9()/1000 + "  ")
 
 ' PRENDI BARCA GRANDE
 DriveForDistanceNoAcc(-150, 70)
@@ -501,14 +514,12 @@ ArcLeftNoAcc(135)
 DriveUntilLine(LINE_SENSOR_LEFT, 30)
 ArcLeftNoAcc(45)
 
-
 ' VAI FUORI DAL PORTO SPINGENDO ENTRAMBE LE BARCHE
 FollowLine(70, 300, 1, 0 ) ' coast at intersection, don't brake
 Motor.MoveSteer(@MOTORS, 70, 0, 40 *  @DISTANCE_FACTOR, "False")
 FollowLine(70, 480, 1, 0 ) ' coast at intersection, don't brake
 Motor.MoveSteer(@MOTORS, 70, 0, 40 *  @DISTANCE_FACTOR, "False")
-FollowLine(70, 700, 1, 1 ) 
-
+FollowLine(70, 700, 1, 1 )
 
 ' manovra barca grande
 DriveForDistanceNoAcc(30, 40)
