@@ -1,0 +1,39 @@
+folder "prjs" "WRO23"
+include "DriveBase"
+include "LineNavigation"
+include "ColorDetection"
+
+LCD.Clear()
+
+
+SLOW_SPEED = 20
+NORMAL_SPEED = 50
+FAST_SPEED = 90
+MOTOR_RIGHT = "C"
+MOTOR_LEFT = "B"
+MOTORS = MOTOR_RIGHT + MOTOR_LEFT
+BLOCK_SENSOR = 2
+LINE_SENSOR_RIGHT = 4
+LINE_SENSOR_LEFT = 3
+
+WHEEL_DIAMETER = 56 ' mm
+WHEELBASE = 178 ' mm
+DISTANCE_FACTOR = 2.03 ' 114.591559/WHEEL_DIAMETER
+TURNING_FACTOR = 3.18 ' WHEELBASE / WHEEL_DIAMETER
+
+Motor.Invert(MOTOR_LEFT)
+Sensor.SetMode(LINE_SENSOR_LEFT, 0) ' set reflected light intensity mode
+Sensor.SetMode(LINE_SENSOR_RIGHT, 0) ' set reflected light intensity mode
+Sensor.SetMode(BLOCK_SENSOR, 4) ' RGB mode
+
+'FollowLine(80, 100, 1 ,1)
+While "True"
+  'FollowUntilCrossingAndTurnLeft()
+  FollowLine(40, 200, 1, 1)
+  'FollowLineForDistanceUntilCrossing(480)
+  SpinRight(180)
+  'Program.Delay(100)
+EndWhile
+
+'DriveUntilLine(LINE_SENSOR_RIGHT)
+Program.Delay(100)

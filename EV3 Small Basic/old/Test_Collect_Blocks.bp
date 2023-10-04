@@ -1,0 +1,38 @@
+folder "prjs" "WRO23"
+include "Grabber"
+include "DriveBase"
+include "ColorDetection"
+include "LineNavigation"
+include "Utilities"
+
+LCD.Clear()
+Motor.Invert(MOTOR_LEFT)
+Sensor.SetMode(LINE_SENSOR_LEFT, 0) ' set reflected light intensity mode
+Sensor.SetMode(LINE_SENSOR_RIGHT, 0) ' set reflected light intensity mode
+Sensor.SetMode(BLOCK_SENSOR, 4) ' RGB mode
+Motor.ResetCount(MOTOR_GRABBER)
+
+Motor.Stop(MOTORS,"True")
+CalibrateGrabber()
+'DriveForDistance(MOTORS,200, 50)
+'Program.Delay(1000)
+'DriveForDistance(MOTORS,-200, 50)
+'Program.Delay(1000)
+
+'@order1 = "GREEN"
+'@order2 = "BLUE"
+
+@greenBlocksCount = 1
+@blueBlocksCount = 1
+CollectBlocksSmallBoat(1, 150)
+SpinRight(90)
+
+
+While "True"
+  LCD.Text(1, 10, 100, 1, "ang = " + Motor.GetCount(MOTOR_GRABBER) + "  ")
+  Program.Delay(100)
+  If Text.IsSubText( Buttons.Current, "L") Then
+    Speaker.Tone(100, 3000, 40)
+    GrabAndDrop()
+  EndIf
+EndWhile

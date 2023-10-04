@@ -1,0 +1,165 @@
+MOTOR_RIGHT = "C"
+MOTOR_LEFT = "B"
+MOTORS = MOTOR_RIGHT + MOTOR_LEFT
+
+WHEEL_DIAMETER = 56 ' mm
+WHEELBASE = 178 ' mm
+DISTANCE_FACTOR = 2.03 ' 114.591559/WHEEL_DIAMETER
+TURNING_FACTOR = 3.18 ' WHEELBASE / WHEEL_DIAMETER
+
+Function SpinRight(in number degrees)
+  Spin(@MOTORS, Math.Abs(degrees), -40)
+EndFunction
+
+Function SpinLeft(in number degrees)
+  Spin(@MOTORS, Math.Abs(degrees), 40)
+EndFunction
+
+Function ArcLeftNoAcc(in number degrees, in number speed)
+  If degrees < 0 Then
+    speed *= -1
+  EndIf
+  Motor.Move(@MOTOR_RIGHT, speed, 2*@TURNING_FACTOR*Math.Abs(degrees), "True")
+EndFunction
+
+Function ArcLeftNoAcc(in number degrees)
+  ArcLeftNoAcc(degrees, 50)
+EndFunction
+
+Function ArcRightNoAcc(in number degrees, in number speed)
+  If degrees < 0 Then
+    speed *= -1
+  EndIf
+  Motor.Move(@MOTOR_LEFT, speed, 2*@TURNING_FACTOR*Math.Abs(degrees), "True")
+EndFunction
+
+Function ArcRightNoAcc(in number degrees)
+  ArcRightNoAcc(degrees, 50)
+EndFunction
+
+Function ArcLeft(in number degrees) ' posive makes an arc forward
+  Motor.Stop(@MOTORS, "True")
+  Pivot(@MOTOR_RIGHT, degrees, 80)
+EndFunction
+
+Function ArcRight(in number degrees) ' posive makes an arc forward
+  Motor.Stop(@MOTORS, "True")
+  Pivot(@MOTOR_LEFT, degrees, 80)
+EndFunction
+
+Function Pivot(in string motor, in number degrees, in number maxSpeed)
+  'LCD.Text(1,1,1,2, "M: " + MOTOR)
+  total = 2*@TURNING_FACTOR*Math.Abs(degrees)
+  ramp = Math.Round(total*0.2)
+  'LCD.Text(1,1,1,2, "total: " + total + "  " )
+  'LCD.Text(1,1,20,2, "ramp: " + ramp + "  " )
+  If degrees < 0 Then
+    maxSpeed = -1*maxSpeed
+  EndIf
+  If Math.Abs(ramp) < 70 Then ' small angle -> low speed, no ramps
+    'Speaker.Tone(100, 5000, 100)
+    ramp = 0
+    Motor.Move(motor, 15, total, "True")
+  Else
+    steady = total - 2*ramp
+    
+    Motor.Schedule(motor, maxSpeed, ramp, steady, ramp, "True")
+    'Motor.SchedulePower(MOTOR, maxPower, ramp, steady, ramp, "True")
+    'Motor.ScheduleSync(MOTORS, -speed, speed, degrees*TURNING_FACTOR, "True")
+    Motor.Wait(motor)
+  EndIf
+  'While Motor.IsBusy(MOTOR)
+  '  Program.Delay(10)
+  'EndWhile
+EndFunction
+
+Function Spin(in string MOTORS, in number degrees, in number speed)
+  Motor.ScheduleSync(MOTORS, -speed, speed, degrees*@TURNING_FACTOR, "True")
+  Motor.Wait(MOTORS)
+  'While Motor.IsBusy(MOTORS)
+  '  Program.Delay(10)
+  'EndWhile
+EndFunction
+
+Function DriveForDistance(in number distance)
+  DriveForDistance(distance, 70)
+EndFunction
+
+Function DriveForDistanceNoAcc(in number distance, in number speed)
+  If distance < 0 Then
+    distance *= -1
+    speed *= -1
+  EndIf
+  Motor.MoveSteer(@MOTORS, speed, 0, distance *  @DISTANCE_FACTOR, "True")
+EndFunction
+
+' acceleration with wheel sync
+Function DriveForDistance (in number distance, in number maxPower )
+  ' Functions do not see global variables.
+  
+  'MOTOR_RIGHT = Text.GetSubText(@MOTORS,1,1)
+  'MOTOR_LEFT = Text.GetSubText(@MOTORS,2,1)
+  
+  'LCD.Text(1,1,1,2, "M: " + MOTOR_LEFT + "  " + MOTOR_RIGHT)
+  'MOTORS = MOTOR_RIGHT + MOTOR_LEFT
+  maxPower = Math.Abs(maxPower)
+  If maxPower > 100 Then
+    maxPower = 100
+  EndIf
+  
+  angleToGo = @DISTANCE_FACTOR * distance
+  Motor.ResetCount(@MOTOR_LEFT)
+  Motor.ResetCount(@MOTOR_RIGHT)
+  
+  power = 0
+  pos0 = Motor.GetCount(@MOTOR_LEFT)
+  angleRamp = Math.Round(0.3*angleToGo)
+  
+  If Math.Abs(angleRamp) < 20 Then
+    angleRamp = 0
+  EndIf
+  
+  'LCD.Text(1,1,20,2, "angle: " + angleToGo)
+  'LCD.Text(1,1,40,2, "decel: " + angleRamp)
+  
+  diff = 0
+  speed = 0
+  
+  While diff < Math.Abs(angleToGo)
+    
+    encRight = Motor.GetCount(@MOTOR_RIGHT)
+    encLeft = Motor.GetCount(@MOTOR_LEFT)
+    diff = Math.Abs(encLeft - pos0)
+    left = angleToGo - diff
+    
+    compensation = 0.5*(encRight - encLeft)
+    
+    powerRight = power + compensation
+    powerLeft = power - compensation
+    
+    Motor.StartSync(@MOTORS, powerRight, powerLeft)
+    
+    'LCD.Text(1,1,60,2, "diff: " + diff + "   " )
+    'LCD.Text(1,1,80,2, "power: " + power + "  ")
+    
+    ' accel/decel management
+    If diff < Math.Abs(angleRamp) Then
+      power = maxPower*diff/angleRamp
+      'LCD.Text(1,1,100,2, "acc:" + power + "  ")
+    ElseIf diff > Math.Abs(angleToGo-angleRamp) Then
+      power = maxPower*(angleToGo-diff)/angleRamp
+      'Speaker.Tone(100,4000,5)
+      'LCD.Text(1,1,100,2, "dec:" + power + "  ")
+    EndIf
+    
+    If angleToGo > 0 And power < 15 Then
+      power = 15
+    EndIf
+    If angleToGo < 0 And power > -15 Then
+      power = -15
+    EndIf
+    Program.Delay(1)
+  EndWhile
+  Motor.Stop(@MOTORS,"True")
+  
+EndFunction
