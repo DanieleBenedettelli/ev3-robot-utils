@@ -1,0 +1,130 @@
+MOTOR_RAMP = "A"
+MOTOR_GRABBER = "D"
+
+GRABBER_MID = 120
+GRABBER_PREPARE = 250
+GRABBER_GRAB = 60
+GRABBER_GRAB_BOAT = 10
+GRABBER_RELEASE_BOAT = 200
+
+RAMP_UNLOAD = 100
+
+Sub CalibrateTools
+  CalibrateGrabber()
+  PreGrab()
+  CalibrateRamp()
+  Grab()
+EndSub
+
+Sub CalibrateRamp
+  Motor.StartPower(@MOTOR_RAMP, -30)
+  While Math.Abs(Motor.GetSpeed(@MOTOR_RAMP)) < 1
+    Program.Delay(100)
+  EndWhile
+  
+  Speaker.Tone(100, 2000, 20)
+  While Math.Abs(Motor.GetSpeed(@MOTOR_RAMP)) > 0
+    Program.Delay(100)
+  EndWhile
+  
+  Motor.Stop(MOTOR_RAMP, "True")
+  Program.Delay(100)
+  Motor.Move(@MOTOR_RAMP, 80, 30, "True")
+  Motor.ResetCount(@MOTOR_RAMP)
+EndSub
+
+Sub UnloadRamp
+  MoveAbsolute(@MOTOR_GRABBER, 50, GRABBER_MID, "True")
+  MoveAbsolute(@MOTOR_RAMP, 20, RAMP_UNLOAD, "True")
+  Program.Delay(100)
+  RaiseRamp()
+  Grab()
+EndSub
+
+Sub UnloadRampAndStop ' at the end of the mission
+  MoveAbsolute(@MOTOR_GRABBER, 50, GRABBER_MID, "True")
+  MoveAbsolute(@MOTOR_RAMP, 20, RAMP_UNLOAD, "True")
+EndSub
+
+Sub RaiseRamp
+  MoveAbsolute(@MOTOR_RAMP, 20, 0, "True")
+EndSub
+
+Sub CalibrateGrabber
+  Motor.StartPower(@MOTOR_GRABBER, 30)
+  Program.Delay(200)
+  Motor.StartPower(@MOTOR_GRABBER, -30)
+  
+  Speaker.Tone(100, 1000, 20)
+  
+  While Math.Abs(Motor.GetSpeed(@MOTOR_GRABBER)) < 1
+    Program.Delay(100)
+  EndWhile
+  
+  Speaker.Tone(100, 2000, 20)
+  While Math.Abs(Motor.GetSpeed(@MOTOR_GRABBER)) > 0
+    Program.Delay(100)
+  EndWhile
+  
+  Speaker.Tone(100, 1000, 20)
+  Motor.Stop(@MOTOR_GRABBER, "True")
+  Program.Delay(20)
+  Motor.Stop(@MOTOR_GRABBER, "False")
+  
+  Program.Delay(200)
+  Motor.ResetCount(@MOTOR_GRABBER)
+  Motor.Stop(@MOTOR_GRABBER, "False")
+EndSub
+
+Function MoveAbsolute(in string motor, in number speed, in number degrees, in string brake)
+  diff = degrees - Motor.GetCount(motor)
+  If diff < 0 Then
+    speed *= -1
+    diff  *= -1
+  EndIf
+  Motor.Move(motor, speed, diff, brake )
+EndFunction
+
+Function ReleaseBoat(in number waitForCompletion)
+  speed = 90
+  diff = @GRABBER_RELEASE_BOAT - Motor.GetCount(@MOTOR_GRABBER)
+  If diff < 0 Then
+    speed *= -1
+    diff  *= -1
+  EndIf
+  'Motor.Move(motor, speed, diff, brake )
+  Motor.Schedule(@MOTOR_GRABBER,speed, 0, diff, 0, "True")
+  If waitForCompletion <> 0 Then
+    While Motor.IsBusy(@MOTOR_GRABBER)
+      Program.Delay(50)
+    EndWhile
+  EndIf
+EndFunction
+
+Sub GrabBoat
+  MoveAbsolute(@MOTOR_GRABBER, 70, @GRABBER_GRAB_BOAT, "True")
+  Program.Delay(50)
+  Motor.Stop(@MOTOR_GRABBER, "False")
+EndSub
+
+Sub PreGrab
+  MoveAbsolute(@MOTOR_GRABBER, 100, 70, "True")
+  Program.Delay(200)
+  MoveAbsolute(@MOTOR_GRABBER, 80, @GRABBER_PREPARE, "True")
+EndSub
+
+Sub Grab
+  MoveAbsolute(@MOTOR_GRABBER, 30, @GRABBER_GRAB, "True")
+  Program.Delay(50)
+  Motor.StartPower(@MOTOR_GRABBER, -20)
+  Program.Delay(300)
+  Motor.Stop(@MOTOR_GRABBER, "True")
+  Program.Delay(50)
+  Motor.Stop(@MOTOR_GRABBER, "False")
+EndSub
+
+Sub GrabAndDrop
+  PreGrab()
+  Program.Delay(100)
+  Grab()
+EndSub

@@ -1,10 +1,9 @@
 folder "prjs" "WRO23"
 include "DriveBase"
 include "LineNavigation"
-include "ColorDetection"
+'include "ColorDetection"
 
 LCD.Clear()
-
 
 SLOW_SPEED = 20
 NORMAL_SPEED = 50
@@ -29,7 +28,7 @@ Sensor.SetMode(BLOCK_SENSOR, 4) ' RGB mode
 'FollowLine(80, 100, 1 ,1)
 While "True"
   'FollowUntilCrossingAndTurnLeft()
-  FollowLine(40, 200, 1, 1)
+  FollowLine(60, 400, 1, 1)
   'FollowLineForDistanceUntilCrossing(480)
   SpinRight(180)
   'Program.Delay(100)

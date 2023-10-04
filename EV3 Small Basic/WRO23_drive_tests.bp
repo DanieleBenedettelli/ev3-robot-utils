@@ -1,0 +1,38 @@
+
+folder "prjs" "WRO23"
+include "DriveBase"
+include "LineNavigation"
+LCD.Clear()
+'LCD.BmpFile(1,0,0,"LEGO")
+
+'Speaker.Note(100,"C4",200)
+'Program.Delay(2000)
+
+SLOW_SPEED = 20
+NORMAL_SPEED = 50
+FAST_SPEED = 90
+MOTOR_RIGHT = "C"
+MOTOR_LEFT = "B"
+MOTORS = MOTOR_RIGHT + MOTOR_LEFT
+
+Motor.Invert(MOTOR_LEFT)
+
+WHEEL_DIAMETER = 56 ' mm
+WHEELBASE = 178 ' mm
+DISTANCE_FACTOR = 2.03 ' 114.591559/WHEEL_DIAMETER
+TURNING_FACTOR = 3.18 ' WHEELBASE / WHEEL_DIAMETER
+
+'DriveForDistance(300) ' using all defaults
+
+While "True"
+  FollowLine(60, 450, 1, 1)
+  SpinRight(180)
+EndWhile
+' positive angles counterclockwise CCW (right-hand rule)
+'SpinRight(90)
+'SpinLeft(90)
+'ArcRight(-90)
+'ArcLeft(-90)
+
+Speaker.Tone(100,5000,10)
+Program.Delay(500)
