@@ -1,23 +1,24 @@
 MOTOR_RAMP = "A"
 MOTOR_GRABBER = "D"
 
-GRABBER_MID = 120
+GRABBER_MID = 220
 GRABBER_PREPARE = 250
-GRABBER_GRAB = 60
+GRABBER_GRAB = 20
 GRABBER_GRAB_BOAT = 10
-GRABBER_RELEASE_BOAT = 200
+GRABBER_RELEASE_BOAT = 230
 
-RAMP_UNLOAD = 100
+RAMP_UNLOAD = 104 ' inside joke
 
 Sub CalibrateTools
   CalibrateGrabber()
-  PreGrab()
+  'PreGrab()
   CalibrateRamp()
-  Grab()
+  'Grab()
 EndSub
 
 Sub CalibrateRamp
   Motor.StartPower(@MOTOR_RAMP, -30)
+  
   While Math.Abs(Motor.GetSpeed(@MOTOR_RAMP)) < 1
     Program.Delay(100)
   EndWhile
@@ -34,21 +35,22 @@ Sub CalibrateRamp
 EndSub
 
 Sub UnloadRamp
-  MoveAbsolute(@MOTOR_GRABBER, 50, GRABBER_MID, "True")
-  MoveAbsolute(@MOTOR_RAMP, 20, RAMP_UNLOAD, "True")
-  Program.Delay(100)
-  RaiseRamp()
+  MoveAbsolute(@MOTOR_GRABBER, 50, GRABBER_MID, "True", 1)
+  MoveAbsolute(@MOTOR_RAMP, 80, RAMP_UNLOAD, "True", 1)
+  'Program.Delay(1000) ' TODO debug
+  RaiseRamp(1)
   Grab()
 EndSub
 
 Sub UnloadRampAndStop ' at the end of the mission
-  MoveAbsolute(@MOTOR_GRABBER, 50, GRABBER_MID, "True")
-  MoveAbsolute(@MOTOR_RAMP, 20, RAMP_UNLOAD, "True")
+  MoveAbsolute(@MOTOR_GRABBER, 50, GRABBER_MID, "True" , 0)
+  Program.Delay(200)
+  MoveAbsolute(@MOTOR_RAMP, 80, RAMP_UNLOAD, "True", 0) ' non aspetta
 EndSub
 
-Sub RaiseRamp
-  MoveAbsolute(@MOTOR_RAMP, 20, 0, "True")
-EndSub
+Function RaiseRamp (in number waitForCompletion)
+  MoveAbsolute(@MOTOR_RAMP, 20, 0, "True", waitForCompletion)
+EndFunction
 
 Sub CalibrateGrabber
   Motor.StartPower(@MOTOR_GRABBER, 30)
@@ -73,58 +75,72 @@ Sub CalibrateGrabber
   
   Program.Delay(200)
   Motor.ResetCount(@MOTOR_GRABBER)
+  Program.Delay(200)
   Motor.Stop(@MOTOR_GRABBER, "False")
 EndSub
 
-Function MoveAbsolute(in string motor, in number speed, in number degrees, in string brake)
+'Function MoveAbsolute(in string motor, in number speed, in number degrees, in string brake)
+'  MoveAbsolute(motor, speed, degrees, brake, 1)
+'EndFunction
+
+Function MoveAbsolute(in string motor, in number speed, in number degrees, in string brake, in number waitForCompletion)
   diff = degrees - Motor.GetCount(motor)
   If diff < 0 Then
     speed *= -1
     diff  *= -1
   EndIf
-  Motor.Move(motor, speed, diff, brake )
+  'Motor.Move(motor, speed, diff, brake )
+  Motor.Schedule(motor,speed, 0, diff, 0, brake)
+  If waitForCompletion<>0 Then
+    While Motor.IsBusy(motor)
+      Program.Delay(20)
+    EndWhile
+  EndIf
 EndFunction
 
 Function ReleaseBoat(in number waitForCompletion)
-  speed = 90
+  speed = 70
   diff = @GRABBER_RELEASE_BOAT - Motor.GetCount(@MOTOR_GRABBER)
   If diff < 0 Then
     speed *= -1
     diff  *= -1
   EndIf
   'Motor.Move(motor, speed, diff, brake )
-  Motor.Schedule(@MOTOR_GRABBER,speed, 0, diff, 0, "True")
-  If waitForCompletion <> 0 Then
-    While Motor.IsBusy(@MOTOR_GRABBER)
-      Program.Delay(50)
-    EndWhile
-  EndIf
+  MoveAbsolute(@MOTOR_GRABBER, speed, diff, "True", 0)
 EndFunction
 
 Sub GrabBoat
-  MoveAbsolute(@MOTOR_GRABBER, 70, @GRABBER_GRAB_BOAT, "True")
-  Program.Delay(50)
+  MoveAbsolute(@MOTOR_GRABBER, 70, @GRABBER_GRAB_BOAT, "True", 0)
+  Program.Delay(300) ' TODO tara tempo
   Motor.Stop(@MOTOR_GRABBER, "False")
 EndSub
 
 Sub PreGrab
-  MoveAbsolute(@MOTOR_GRABBER, 100, 70, "True")
+  MoveAbsolute(@MOTOR_GRABBER, 100, 60, "True", 1)
   Program.Delay(200)
-  MoveAbsolute(@MOTOR_GRABBER, 80, @GRABBER_PREPARE, "True")
+  MoveAbsolute(@MOTOR_GRABBER, 80, @GRABBER_PREPARE, "True", 0)
+  Program.Delay(200) ' TODO tara tempo
 EndSub
 
 Sub Grab
-  MoveAbsolute(@MOTOR_GRABBER, 30, @GRABBER_GRAB, "True")
-  Program.Delay(50)
-  Motor.StartPower(@MOTOR_GRABBER, -20)
-  Program.Delay(300)
+  MoveAbsolute(@MOTOR_GRABBER, 30, @GRABBER_GRAB, "True", 0)
+  Program.Delay(500) ' TODO tara tempo
+  ' stringi per tempo
+  Motor.StartPower(@MOTOR_GRABBER, -30)
+  Program.Delay(150)
   Motor.Stop(@MOTOR_GRABBER, "True")
-  Program.Delay(50)
+  Program.Delay(20)
   Motor.Stop(@MOTOR_GRABBER, "False")
 EndSub
 
 Sub GrabAndDrop
   PreGrab()
-  Program.Delay(100)
+  'Program.Delay(100)
   Grab()
+EndSub
+
+Sub PushBlocks
+  MoveAbsolute(@MOTOR_GRABBER, 30, 130, "True", 1)
+  MoveAbsolute(@MOTOR_GRABBER, 30, 10, "True", 0)
+  Program.Delay(100)
 EndSub

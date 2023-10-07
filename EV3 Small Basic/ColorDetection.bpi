@@ -11,7 +11,7 @@ Function ReadColorRobust(in number SensorPort, in number longRange, out string c
   COLORS[2] = "WHITE"
   COLORS[3] = "RED"
   COLORS[4] = "YELLOW"
-  ReadColorRobust(sensorPort, COLORS, 3, 10, longRange, color)
+  ReadColorRobust(sensorPort, COLORS, 3, 7, longRange, color)
 EndFunction
 
 Function ReadColorRobust(in number sensorPort, in string[] COLORS, in number LEN, in number samples, in number longRange, out string color)

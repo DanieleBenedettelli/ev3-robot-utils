@@ -20,7 +20,7 @@ Function DriveAndScanOrder(in number distance, in number distanceBlock1, in numb
   pos0 = Motor.GetCount(@MOTOR_LEFT)
   
   done = 0
-  power = 60
+  power = 70
   eOld = 0
   
   While done = 0
@@ -38,8 +38,8 @@ Function DriveAndScanOrder(in number distance, in number distanceBlock1, in numb
     'eOld = error
     'u = -0.3*error '+ 0.008*eI + 0.15*eD
     
-    'compensation = 0.5*(encRight - encLeft)
-    compensation = 0.2*error '+ 1.5*eD  ' THIS WORKS @ 100Hz!!!!
+    compensation = -0.5*(encRight - encLeft)
+    'compensation = 0.3*error '+ 0.1*eD
     
     powerRight = power + compensation
     powerLeft = power - compensation
@@ -53,10 +53,10 @@ Function DriveAndScanOrder(in number distance, in number distanceBlock1, in numb
     If travelDone > distanceBlock1-15 Then
       power = 40
     ElseIf travelDone > distanceBlock2+20 Then
-      power = 60
+      power = 65
     EndIf
     
-    If order1 = "NONE" And (distanceBlock1-5) < travelDone And travelDone < (distanceBlock1+5) Then
+    If order1 = "NONE" And (distanceBlock1-7) < travelDone And travelDone < (distanceBlock1+7) Then
       ReadColor(@BLOCK_SENSOR, 1, 1, color)
       If color <> "NONE" Then
         ReadColorRobust(@BLOCK_SENSOR, 1, robustColor)
@@ -69,7 +69,7 @@ Function DriveAndScanOrder(in number distance, in number distanceBlock1, in numb
       EndIf
     EndIf
     
-    If order2 = "NONE" And (distanceBlock2-5) < travelDone And travelDone < (distanceBlock2+5) Then
+    If order2 = "NONE" And (distanceBlock2-7) < travelDone And travelDone < (distanceBlock2+7) Then
       ReadColor(@BLOCK_SENSOR, 1, 1, color)
       If color <> "NONE" Then
         ReadColorRobust(@BLOCK_SENSOR, 1, robustColor)
@@ -115,7 +115,7 @@ Function CollectWhiteBlock()
   searchOver = 0
   blockColor = "NONE"
   blockOffset = -40 ' mm
-  searchSpeed = -20
+  searchSpeed = -30
   maxDistanceToSearch = 100
   
   pos0 = Motor.GetCount(@MOTOR_LEFT)
@@ -132,11 +132,11 @@ Function CollectWhiteBlock()
       'SayColor(blockColor, 0)
       
       'If blockColor = "WHITE" Then
-      DriveForDistanceNoAcc(blockOffset, 15)
+      DriveForDistanceNoAcc(blockOffset, 30)
       GrabAndDrop()
       searchOver = 1
       'Else
-      DriveForDistanceNoAcc(blockOffset, 15) ' supera il blocco ignorato
+      DriveForDistanceNoAcc(blockOffset, 30) ' supera il blocco ignorato
       'EndIf
       
     EndIf
@@ -154,12 +154,25 @@ EndFunction
 ' distanza da dove parto a retromarcia col robot per prendere i blocchi per la barca grande
 ' e la linea dei container colorati
 
+Function UltimoBloccoPreso(out number lastId)
+  id = 4
+  lastId = 4
+  While id >= 1
+    If @blocchiPresi[id] = 0 Then
+      lastId = id
+    EndIf
+    id -= 1
+  EndWhile
+EndFunction
+
 Function CollectBlocksLargeBoat(in number direction, in number maxDistanceToSearch)
   
   searchOver = 0
   blockColor = "NONE"
   blockOffset = -30 ' mm
-  searchSpeed = 25
+  searchSpeed = 40
+  
+  DriveForDistanceNoAcc(-150,40)
   
   If maxDistanceToSearch = 0 Then
     maxDistanceToSearch = 380 ' mm
@@ -180,13 +193,13 @@ Function CollectBlocksLargeBoat(in number direction, in number maxDistanceToSear
       
       Speaker.Tone(100, 5000, 100)
       
-      DriveForDistanceNoAcc(blockOffset, 15)
+      DriveForDistanceNoAcc(blockOffset, 30)
       GrabAndDrop()
       found += 1
       
       ' quando ne hai trovato uno, accorcia la distanza massima
       If found = 1 Then
-        maxDistanceToSearch = 130
+        maxDistanceToSearch = 220
       EndIf
       
       If found = 2 Then
@@ -211,21 +224,36 @@ Function CollectBlocksLargeBoat(in number direction, in number maxDistanceToSear
     EndIf
   EndWhile
   
-  travelFromBeginning = Math.Abs((Motor.GetCount(@MOTOR_LEFT) - pos1 )/@DISTANCE_FACTOR)
+  ultimo = 4
+  UltimoBloccoPreso(ultimo)
+  distanza[3] = -160
+  distanza[2] = -100
+  distanza[1] = -20
   
+  distanzaIndietro = distanza[ultimo]
+  
+  'LCD.Clear()
+  'LCD.Text(1, 5, 30, 1, "id: " + ultimo + "  ")
+  'LCD.Text(1, 5, 40, 1, "d: " + distanzaIndietro + " mm ")
+  
+  'Speaker.Tone(100, 5000, 1000)
+  'WaitAnyKey()
+  DriveForDistanceNoAcc(distanzaIndietro, 40)
+  
+  'travelFromBeginning = Math.Abs((Motor.GetCount(@MOTOR_LEFT) - pos1 )/@DISTANCE_FACTOR)
   'LCD.Clear()
   'LCD.Text(1, 5, 30, 1, "d: " + travelFromBeginning + " mm ")
   'LCD.Text(1, 5, 40, 1, "d: " + @DISTANCE_DOCK_LINE + " mm ")
   'Speaker.Tone(100, 5000, 1000)
   'Program.Delay(4000)
   
-  If travelFromBeginning > @DISTANCE_DOCK_LINE Then ' sono andato indietro oltre la linea nera
-    'Speaker.Play(100, "Forward")
-    DriveUntilLine(@LINE_SENSOR_LEFT, 20)
-  Else
-    'Speaker.Play(100, "Backward")
-    DriveUntilLine(@LINE_SENSOR_LEFT, -20)
-  EndIf
+  'If travelFromBeginning > @DISTANCE_DOCK_LINE Then ' sono andato indietro oltre la linea nera
+  'Speaker.Play(100, "Forward")
+  '  DriveUntilLine(@LINE_SENSOR_LEFT, 20)
+  'Else
+  'Speaker.Play(100, "Backward")
+  '  DriveUntilLine(@LINE_SENSOR_LEFT, -20)
+  'EndIf
   
 EndFunction
 
@@ -233,9 +261,11 @@ Function CollectBlocksSmallBoat(in number direction, in number maxDistanceToSear
   
   searchOver = 0
   blockColor = "NONE"
-  blockOffset = -10 ' mm
+  blockOffsetBlue = -10 ' mm
+  blockOffsetGreen = -25 ' mm
   sorpassaBlocco = 60
-  searchSpeed = 20
+  searchSpeed = 40
+  blocchiVisti = 0
   
   If maxDistanceToSearch = 0 Then
     maxDistanceToSearch = 100 ' mm
@@ -262,20 +292,23 @@ Function CollectBlocksSmallBoat(in number direction, in number maxDistanceToSear
       Speaker.Tone(100, 5000, 100)
       ReadColorRobust(@BLOCK_SENSOR, @SHORT_RANGE, blockColor)
       LCD.Text(1, 10, 100, 1, "rob. color = " + blockColor + "  ")
-      SayColor(blockColor, 0)
+      'SayColor(blockColor, 0)
+      blocchiVisti += 1
       
       If blockColor = "GREEN" And @greenBlocksCount < 2 Then
         @greenBlocksCount += 1
-        DriveForDistanceNoAcc(blockOffset, 10)
+        DriveForDistanceNoAcc(blockOffsetGreen, 20)
         GrabAndDrop()
+        @blocchiPresi[blocchiVisti] = 1
         found += 1
       ElseIf blockColor = "BLUE" And @blueBlocksCount < 2 Then
         @blueBlocksCount += 1
-        DriveForDistanceNoAcc(blockOffset, 10)
+        DriveForDistanceNoAcc(blockOffsetBlue, 20)
         GrabAndDrop()
+        @blocchiPresi[blocchiVisti] = 1
         found += 1
       Else
-        DriveForDistanceNoAcc(sorpassaBlocco, 10) ' supera il blocco ignorato
+        DriveForDistanceNoAcc(sorpassaBlocco, 20) ' supera il blocco ignorato
       EndIf
       
       If found = 2 Then
@@ -300,12 +333,31 @@ Function CollectBlocksSmallBoat(in number direction, in number maxDistanceToSear
     EndIf
   EndWhile
   
-  travelFromFirstBlock = (Motor.GetCount(@MOTOR_LEFT) - pos1 )
-  distanceToLine = @DISTANCE_FIRST_BLOCK_LINE - travelFromFirstBlock/@DISTANCE_FACTOR
+  If blocchiVisti= 2 Then
+    'DriveUntilLine(@LINE_SENSOR_LEFT, 30, 1 ,65, 20)
+    DriveForDistanceNoAcc(115, 40)
+  ElseIf blocchiVisti = 3 Then
+    DriveForDistanceNoAcc(45, 40)
+  ElseIf blocchiVisti = 4 Then
+    DriveForDistanceNoAcc(-30, 40) ' era -25
+  EndIf
+  'travelFromFirstBlock = (Motor.GetCount(@MOTOR_LEFT) - pos1 )
+  
   'LCD.Clear()
   'LCD.Text(1, 5, 30, 1, "d: " + travelFromFirstBlock/@DISTANCE_FACTOR + " mm ")
-  'LCD.Text(1, 5, 50, 1, "go: " + distanceToLine + " mm  ")
-  DriveForDistanceNoAcc(distanceToLine, 30)
+  'LCD.Text(1, 5, 50, 1, "go: " + @DISTANCE_FIRST_BLOCK_LINE + " mm  ")
+  'WaitAnyKey()
+  
+  'If travelFromFirstBlock > @DISTANCE_FIRST_BLOCK_LINE Then
+  '  DriveUntilLine(@LINE_SENSOR_LEFT, -30, 1 ,65, 20)
+  '  DriveForDistanceNoAcc(25, 40)
+  'Else
+  '  DriveUntilLine(@LINE_SENSOR_LEFT, 30, 1 ,65, 20)
+  '  DriveForDistanceNoAcc(35, 40)
+  'EndIf
+  'distanceToLine = @DISTANCE_FIRST_BLOCK_LINE - travelFromFirstBlock/@DISTANCE_FACTOR
+  
+  'DriveForDistanceNoAcc(distanceToLine, 30)
   
 EndFunction
 

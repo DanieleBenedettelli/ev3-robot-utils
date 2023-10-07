@@ -8,11 +8,11 @@ DISTANCE_FACTOR = 2.03 ' 114.591559/WHEEL_DIAMETER
 TURNING_FACTOR = 3.18 ' WHEELBASE / WHEEL_DIAMETER
 
 Function SpinRight(in number degrees)
-  Spin(@MOTORS, Math.Abs(degrees), -40)
+  Spin(@MOTORS, Math.Abs(degrees), -50) ' vel 40 era OK
 EndFunction
 
 Function SpinLeft(in number degrees)
-  Spin(@MOTORS, Math.Abs(degrees), 40)
+  Spin(@MOTORS, Math.Abs(degrees), 50) ' vel 40 era OK
 EndFunction
 
 Function ArcLeftNoAcc(in number degrees, in number speed)

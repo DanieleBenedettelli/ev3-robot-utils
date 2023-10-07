@@ -135,6 +135,7 @@ Function FollowLine(in number basePower, in number distanceBefore, in number Unt
   error = 0
   REFERENCE = 60
   eI = 0
+  LOW_POWER = 40
   
   angleToGo = @DISTANCE_FACTOR * distanceBefore
   Motor.ResetCount(@MOTOR_LEFT)
@@ -158,7 +159,8 @@ Function FollowLine(in number basePower, in number distanceBefore, in number Unt
     'eI = 0.8*eI + 0.05*error
     eOld = error
     
-    u = direction*( 0.35*error + 1.5*eD ) ' THIS WORKS @ 100Hz!!!!               + 0.008*eI
+    'u = direction*( 0.35*error + 1.5*eD ) ' funziona a 100Hz, ma sculetta
+    u = direction*( 0.32*error + 1.8*eD ) ' funziona a 100Hz, ma sculetta
     
     If Math.Abs(error) > 30 Then
       power = basePower*0.8
@@ -171,7 +173,7 @@ Function FollowLine(in number basePower, in number distanceBefore, in number Unt
     diff = Math.Abs(encLeft - pos0)
     If angleToGo <> 0 Then
       If diff > angleToGo Then
-        power = 18
+        power = LOW_POWER
         'Speaker.Tone(100, 2000, 10)
         If untilCrossing = 0 Then
           done = 1
@@ -184,10 +186,10 @@ Function FollowLine(in number basePower, in number distanceBefore, in number Unt
     EndIf
     
     ' crossing detection
-    If readingL > 25 Or readingR > 25 Then
+    If readingL > 30 Or readingR > 30 Then
       Time.Reset1()
     EndIf
-    If Time.Get1() > 40 Then
+    If Time.Get1() > 40 Then ' se entrambi vedono sotto soglia per 40ms...
       done = 1
     EndIf
     
