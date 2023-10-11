@@ -1,0 +1,36 @@
+folder "prjs" "WRO23"
+include "ColorDetection"
+include "DriveBase"
+include "LineNavigation"
+include "Grabber"
+
+SLOW_SPEED = 20
+NORMAL_SPEED = 50
+FAST_SPEED = 70
+MOTOR_RIGHT = "C"
+MOTOR_LEFT = "B"
+MOTOR_RAMP = "A"
+MOTORS = MOTOR_RIGHT + MOTOR_LEFT
+BLOCK_SENSOR = 2
+LINE_SENSOR_RIGHT = 4
+LINE_SENSOR_LEFT = 3
+
+WHEEL_DIAMETER = 56 ' mm
+WHEELBASE = 178 ' mm
+DISTANCE_FACTOR = 2.03 ' 114.591559/WHEEL_DIAMETER
+TURNING_FACTOR = 3.18 ' WHEELBASE / WHEEL_DIAMETER
+
+Motor.Invert(MOTOR_LEFT)
+
+'DriveForDistance(100,60)
+DriveForDistance(50,25)
+ArcLeft(90)
+DriveForDistance(-100)
+Program.Delay(500)
+ArcRight(-10) ' SGANCIO
+DriveForDistance(-50)
+'Program.Delay(5000)
+'ArcLeft(-90)
+
+'DriveForDistanceNoAcc(20, 10)
+'ArcRight(135) ' DEBUG PIVOT

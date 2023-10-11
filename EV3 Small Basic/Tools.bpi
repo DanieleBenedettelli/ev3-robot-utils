@@ -3,9 +3,9 @@ MOTOR_GRABBER = "D"
 
 GRABBER_MID = 220
 GRABBER_PREPARE = 250
-GRABBER_GRAB = 20
+GRABBER_GRAB = 10
 GRABBER_GRAB_BOAT = 10
-GRABBER_RELEASE_BOAT = 230
+GRABBER_RELEASE_BOAT = 200 ' 200
 
 RAMP_UNLOAD = 104 ' inside joke
 
@@ -112,35 +112,47 @@ EndFunction
 Sub GrabBoat
   MoveAbsolute(@MOTOR_GRABBER, 70, @GRABBER_GRAB_BOAT, "True", 0)
   Program.Delay(300) ' TODO tara tempo
-  Motor.Stop(@MOTOR_GRABBER, "False")
+  Motor.Stop(@MOTOR_GRABBER, "True")
 EndSub
 
 Sub PreGrab
-  MoveAbsolute(@MOTOR_GRABBER, 100, 60, "True", 1)
+  MoveAbsolute(@MOTOR_GRABBER, 90, 60, "True", 1)
   Program.Delay(200)
-  MoveAbsolute(@MOTOR_GRABBER, 80, @GRABBER_PREPARE, "True", 0)
-  Program.Delay(200) ' TODO tara tempo
+  MoveAbsolute(@MOTOR_GRABBER, 90, @GRABBER_PREPARE, "True", 0)
+  Program.Delay(200)
+EndSub
+
+Sub GrabAndDropLast
+  PreGrab()
+  MoveAbsolute(@MOTOR_GRABBER, 15, @GRABBER_GRAB, "True", 0)
+  Program.Delay(300) ' TODO tara tempo
+  ' stringi per tempo
+  Motor.StartPower(@MOTOR_GRABBER, -60)
+  Program.Delay(200)
+  Motor.Stop(@MOTOR_GRABBER, "True")
+  'Program.Delay(20)
+  'Motor.Stop(@MOTOR_GRABBER, "False")
 EndSub
 
 Sub Grab
-  MoveAbsolute(@MOTOR_GRABBER, 30, @GRABBER_GRAB, "True", 0)
-  Program.Delay(500) ' TODO tara tempo
+  MoveAbsolute(@MOTOR_GRABBER, 35, @GRABBER_GRAB, "True", 0)
+  Program.Delay(300) ' TODO tara tempo
   ' stringi per tempo
-  Motor.StartPower(@MOTOR_GRABBER, -30)
-  Program.Delay(150)
+  Motor.StartPower(@MOTOR_GRABBER, -40)
+  Program.Delay(300)
   Motor.Stop(@MOTOR_GRABBER, "True")
-  Program.Delay(20)
-  Motor.Stop(@MOTOR_GRABBER, "False")
+  'Program.Delay(20)
+  'Motor.Stop(@MOTOR_GRABBER, "False")
 EndSub
 
 Sub GrabAndDrop
   PreGrab()
-  'Program.Delay(100)
+  Program.Delay(100) ' TODO tara tempo
   Grab()
 EndSub
 
 Sub PushBlocks
   MoveAbsolute(@MOTOR_GRABBER, 30, 130, "True", 1)
-  MoveAbsolute(@MOTOR_GRABBER, 30, 10, "True", 0)
+  MoveAbsolute(@MOTOR_GRABBER, 30, 20, "True", 0)
   Program.Delay(100)
 EndSub

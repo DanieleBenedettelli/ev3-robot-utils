@@ -148,3 +148,13 @@ Function SayColor(in string color, in number waitForCompletion)
     Speaker.Wait()
   EndIf
 EndFunction
+
+Function BeepColor(in string color)
+  If color = "BLUE" Then
+    Speaker.Tone(100,2000,20)
+  ElseIf color = "GREEN" Then
+    Speaker.Tone(100,4000,20)
+  ElseIf color = "WHITE" Then
+    Speaker.Tone(100,1000,20)
+  EndIf
+EndFunction

@@ -62,6 +62,7 @@ Function DriveAndScanOrder(in number distance, in number distanceBlock1, in numb
         ReadColorRobust(@BLOCK_SENSOR, 1, robustColor)
         If robustColor <> "NONE" Then
           order1 = robustColor
+          BeepColor(order1)
           'Motor.Stop(@MOTORS,"True")
           'SayColor(order1,0)
           'Program.Delay(1000)
@@ -75,6 +76,7 @@ Function DriveAndScanOrder(in number distance, in number distanceBlock1, in numb
         ReadColorRobust(@BLOCK_SENSOR, 1, robustColor)
         If robustColor <> "NONE" Then
           order2 = robustColor
+          BeepColor(order2)
           'Motor.Stop(@MOTORS,"True")
           'SayColor(order2,0)
           'Program.Delay(1000)
@@ -88,7 +90,7 @@ Function DriveAndScanOrder(in number distance, in number distanceBlock1, in numb
       done = 1
     EndIf
     timeLoop = Time.Get2()
-    LCD.Text(1, 10, 50, 2, "T: " + timeLoop + "  ")
+    'LCD.Text(1, 10, 50, 2, "T: " + timeLoop + "  ")
     Program.Delay(10-timeLoop)
   EndWhile
   
@@ -110,158 +112,11 @@ Function DriveAndScanOrder(in number distance, in number distanceBlock1, in numb
   
 EndFunction
 
-Function CollectWhiteBlock()
-  
-  searchOver = 0
-  blockColor = "NONE"
-  blockOffset = -40 ' mm
-  searchSpeed = -30
-  maxDistanceToSearch = 100
-  
-  pos0 = Motor.GetCount(@MOTOR_LEFT)
-  found = 0
-  
-  Motor.StartSteer(@MOTORS, searchSpeed, 0)
-  While searchOver = 0
-    ReadColor(@BLOCK_SENSOR, @SHORT_RANGE, @SHOW_DEBUG, blockColor)
-    If (blockColor<>"NONE") Then
-      Motor.Stop(@MOTORS, "True")
-      Speaker.Tone(100, 5000, 100)
-      ReadColorRobust(@BLOCK_SENSOR, @SHORT_RANGE, blockColor)
-      'LCD.Text(1, 10, 100, 1, "rob. color = " + blockColor + "  ")
-      'SayColor(blockColor, 0)
-      
-      'If blockColor = "WHITE" Then
-      DriveForDistanceNoAcc(blockOffset, 30)
-      GrabAndDrop()
-      searchOver = 1
-      'Else
-      DriveForDistanceNoAcc(blockOffset, 30) ' supera il blocco ignorato
-      'EndIf
-      
-    EndIf
-    
-    encLeft = Motor.GetCount(@MOTOR_LEFT)
-    diff = Math.Abs(encLeft - pos0)
-    If diff > @DISTANCE_FACTOR * maxDistanceToSearch Then
-      Motor.Stop(@MOTORS, "True")
-      Speaker.Tone(100, 300, 500)
-      searchOver = 1
-    EndIf
-  EndWhile
-EndFunction
-
-' distanza da dove parto a retromarcia col robot per prendere i blocchi per la barca grande
-' e la linea dei container colorati
-
-Function UltimoBloccoPreso(out number lastId)
-  id = 4
-  lastId = 4
-  While id >= 1
-    If @blocchiPresi[id] = 0 Then
-      lastId = id
-    EndIf
-    id -= 1
-  EndWhile
-EndFunction
-
-Function CollectBlocksLargeBoat(in number direction, in number maxDistanceToSearch)
-  
-  searchOver = 0
-  blockColor = "NONE"
-  blockOffset = -30 ' mm
-  searchSpeed = 40
-  
-  DriveForDistanceNoAcc(-150,40)
-  
-  If maxDistanceToSearch = 0 Then
-    maxDistanceToSearch = 380 ' mm
-  EndIf
-  If direction < 0 Then
-    searchSpeed *= -1
-  EndIf
-  
-  pos0 = Motor.GetCount(@MOTOR_LEFT)
-  pos1 = pos0 ' usiamo questo punto per capire dove siamo rispetto alla linea
-  found = 0
-  
-  Motor.StartSteer(@MOTORS, searchSpeed, 0)
-  While searchOver = 0
-    ReadColor(@BLOCK_SENSOR, @SHORT_RANGE, @SHOW_DEBUG, blockColor)
-    If (blockColor = "BLUE" Or blockColor = "GREEN") Then
-      Motor.Stop(@MOTORS, "True")
-      
-      Speaker.Tone(100, 5000, 100)
-      
-      DriveForDistanceNoAcc(blockOffset, 30)
-      GrabAndDrop()
-      found += 1
-      
-      ' quando ne hai trovato uno, accorcia la distanza massima
-      If found = 1 Then
-        maxDistanceToSearch = 220
-      EndIf
-      
-      If found = 2 Then
-        searchOver = 1
-      Else ' start for the next
-        pos0 = Motor.GetCount(@MOTOR_LEFT)
-        Speaker.Tone(100, 3000, 100)
-        Motor.StartSteer(@MOTORS, searchSpeed, 0)
-      EndIf
-    EndIf
-    
-    'If found = 2 Then
-    '  searchOver = 1
-    'EndIf
-    
-    encLeft = Motor.GetCount(@MOTOR_LEFT)
-    diff = Math.Abs(encLeft - pos0)
-    If diff > @DISTANCE_FACTOR * maxDistanceToSearch Then
-      Motor.Stop(@MOTORS, "True")
-      Speaker.Tone(100, 300, 100)
-      searchOver = 1
-    EndIf
-  EndWhile
-  
-  ultimo = 4
-  UltimoBloccoPreso(ultimo)
-  distanza[3] = -160
-  distanza[2] = -100
-  distanza[1] = -20
-  
-  distanzaIndietro = distanza[ultimo]
-  
-  'LCD.Clear()
-  'LCD.Text(1, 5, 30, 1, "id: " + ultimo + "  ")
-  'LCD.Text(1, 5, 40, 1, "d: " + distanzaIndietro + " mm ")
-  
-  'Speaker.Tone(100, 5000, 1000)
-  'WaitAnyKey()
-  DriveForDistanceNoAcc(distanzaIndietro, 40)
-  
-  'travelFromBeginning = Math.Abs((Motor.GetCount(@MOTOR_LEFT) - pos1 )/@DISTANCE_FACTOR)
-  'LCD.Clear()
-  'LCD.Text(1, 5, 30, 1, "d: " + travelFromBeginning + " mm ")
-  'LCD.Text(1, 5, 40, 1, "d: " + @DISTANCE_DOCK_LINE + " mm ")
-  'Speaker.Tone(100, 5000, 1000)
-  'Program.Delay(4000)
-  
-  'If travelFromBeginning > @DISTANCE_DOCK_LINE Then ' sono andato indietro oltre la linea nera
-  'Speaker.Play(100, "Forward")
-  '  DriveUntilLine(@LINE_SENSOR_LEFT, 20)
-  'Else
-  'Speaker.Play(100, "Backward")
-  '  DriveUntilLine(@LINE_SENSOR_LEFT, -20)
-  'EndIf
-  
-EndFunction
-
 Function CollectBlocksSmallBoat(in number direction, in number maxDistanceToSearch)
   
   searchOver = 0
   blockColor = "NONE"
-  blockOffsetBlue = -10 ' mm
+  blockOffsetBlue = -15 ' mm
   blockOffsetGreen = -25 ' mm
   sorpassaBlocco = 60
   searchSpeed = 40
@@ -341,25 +196,120 @@ Function CollectBlocksSmallBoat(in number direction, in number maxDistanceToSear
   ElseIf blocchiVisti = 4 Then
     DriveForDistanceNoAcc(-30, 40) ' era -25
   EndIf
-  'travelFromFirstBlock = (Motor.GetCount(@MOTOR_LEFT) - pos1 )
+EndFunction
+
+
+' distanza da dove parto a retromarcia col robot per prendere i blocchi per la barca grande
+' e la linea dei container colorati
+
+Function UltimoBloccoPreso(out number lastId)
+  id = 4
+  lastId = 4
+  While id >= 1
+    If @blocchiPresi[id] = 0 Then
+      lastId = id
+    EndIf
+    id -= 1
+  EndWhile
+EndFunction
+
+Function CollectBlocksLargeBoat(in number direction, in number maxDistanceToSearch)
+  
+  searchOver = 0
+  blockColor = "NONE"
+  blockOffset = -30 ' mm
+  searchSpeed = 40
+  
+  DriveForDistanceNoAcc(-150,40)
+  
+  If maxDistanceToSearch = 0 Then
+    maxDistanceToSearch = 380 ' mm
+  EndIf
+  If direction < 0 Then
+    searchSpeed *= -1
+  EndIf
+  
+  pos0 = Motor.GetCount(@MOTOR_LEFT)
+  pos1 = pos0 ' usiamo questo punto per capire dove siamo rispetto alla linea
+  found = 0
+  
+  Motor.StartSteer(@MOTORS, searchSpeed, 0)
+  While searchOver = 0
+    ReadColor(@BLOCK_SENSOR, @SHORT_RANGE, @SHOW_DEBUG, blockColor)
+    If (blockColor = "BLUE" Or blockColor = "GREEN") Then
+      Motor.Stop(@MOTORS, "True")
+      
+      Speaker.Tone(100, 5000, 100)
+      
+      DriveForDistanceNoAcc(blockOffset, 30)
+      found += 1
+      'If found = 1 Then
+        GrabAndDrop()
+      'ElseIf found = 2 Then
+      '  GrabAndDropLast()
+      'EndIf
+      
+      ' quando ne hai trovato uno, accorcia la distanza massima
+      If found = 1 Then
+        maxDistanceToSearch = 220
+      EndIf
+      
+      If found = 2 Then
+        searchOver = 1
+      Else ' start for the next
+        pos0 = Motor.GetCount(@MOTOR_LEFT)
+        Speaker.Tone(100, 3000, 100)
+        Motor.StartSteer(@MOTORS, searchSpeed, 0)
+      EndIf
+    EndIf
+    
+    'If found = 2 Then
+    '  searchOver = 1
+    'EndIf
+    
+    encLeft = Motor.GetCount(@MOTOR_LEFT)
+    diff = Math.Abs(encLeft - pos0)
+    If diff > @DISTANCE_FACTOR * maxDistanceToSearch Then
+      Motor.Stop(@MOTORS, "True")
+      Speaker.Tone(100, 300, 100)
+      searchOver = 1
+    EndIf
+  EndWhile
+  
+  ultimo = 4
+  UltimoBloccoPreso(ultimo)
+  distanza[3] = -160
+  distanza[2] = -100
+  distanza[1] = -20
+  
+  distanzaIndietro = distanza[ultimo]
   
   'LCD.Clear()
-  'LCD.Text(1, 5, 30, 1, "d: " + travelFromFirstBlock/@DISTANCE_FACTOR + " mm ")
-  'LCD.Text(1, 5, 50, 1, "go: " + @DISTANCE_FIRST_BLOCK_LINE + " mm  ")
+  'LCD.Text(1, 5, 30, 1, "id: " + ultimo + "  ")
+  'LCD.Text(1, 5, 40, 1, "d: " + distanzaIndietro + " mm ")
+  
+  'Speaker.Tone(100, 5000, 1000)
   'WaitAnyKey()
+  DriveForDistanceNoAcc(distanzaIndietro, 40)
   
-  'If travelFromFirstBlock > @DISTANCE_FIRST_BLOCK_LINE Then
-  '  DriveUntilLine(@LINE_SENSOR_LEFT, -30, 1 ,65, 20)
-  '  DriveForDistanceNoAcc(25, 40)
+  'travelFromBeginning = Math.Abs((Motor.GetCount(@MOTOR_LEFT) - pos1 )/@DISTANCE_FACTOR)
+  'LCD.Clear()
+  'LCD.Text(1, 5, 30, 1, "d: " + travelFromBeginning + " mm ")
+  'LCD.Text(1, 5, 40, 1, "d: " + @DISTANCE_DOCK_LINE + " mm ")
+  'Speaker.Tone(100, 5000, 1000)
+  'Program.Delay(4000)
+  
+  'If travelFromBeginning > @DISTANCE_DOCK_LINE Then ' sono andato indietro oltre la linea nera
+  'Speaker.Play(100, "Forward")
+  '  DriveUntilLine(@LINE_SENSOR_LEFT, 20)
   'Else
-  '  DriveUntilLine(@LINE_SENSOR_LEFT, 30, 1 ,65, 20)
-  '  DriveForDistanceNoAcc(35, 40)
+  'Speaker.Play(100, "Backward")
+  '  DriveUntilLine(@LINE_SENSOR_LEFT, -20)
   'EndIf
-  'distanceToLine = @DISTANCE_FIRST_BLOCK_LINE - travelFromFirstBlock/@DISTANCE_FACTOR
-  
-  'DriveForDistanceNoAcc(distanceToLine, 30)
   
 EndFunction
+
+
 
 Sub sayOrders
   SayColor(@order1, 1)

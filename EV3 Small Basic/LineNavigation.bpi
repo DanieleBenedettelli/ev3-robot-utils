@@ -135,7 +135,8 @@ Function FollowLine(in number basePower, in number distanceBefore, in number Unt
   error = 0
   REFERENCE = 60
   eI = 0
-  LOW_POWER = 40
+  LOW_POWER = 30
+  cercaIncrocio = 0
   
   angleToGo = @DISTANCE_FACTOR * distanceBefore
   Motor.ResetCount(@MOTOR_LEFT)
@@ -159,14 +160,24 @@ Function FollowLine(in number basePower, in number distanceBefore, in number Unt
     'eI = 0.8*eI + 0.05*error
     eOld = error
     
-    'u = direction*( 0.35*error + 1.5*eD ) ' funziona a 100Hz, ma sculetta
-    u = direction*( 0.32*error + 1.8*eD ) ' funziona a 100Hz, ma sculetta
-    
-    If Math.Abs(error) > 30 Then
-      power = basePower*0.8
-    Else
-      power = basePower
+    'u = direction*( 0.32*error + 1.8*eD ) ' funziona a 100Hz, ma sculetta
+    'u = direction*( 0.8*error + 3.5*eD ) ' funziona a 100Hz, ma sculetta
+    If cercaIncrocio = 0 Then
+      u = direction*( 0.8*error + 4*eD ) ' funziona a 100Hz, ma sculetta
+    Else ' cerca incrocio
+      u = direction*( 0.4*error + 1.6*eD ) ' funziona a 100Hz, ma sculetta
     EndIf
+    
+    If readingL < 30 And readingR < 30 Then ' sei su un incrocio, non sbandare!
+      Speaker.Tone(100, 4000, 10)
+      u = 0
+    EndIf
+    
+    'If Math.Abs(error) > 30 Then
+    '  power = basePower*0.8
+    'Else
+    power = basePower
+    'EndIf
     
     ' distance measurement
     encLeft = Motor.GetCount(@MOTOR_LEFT)
@@ -174,6 +185,7 @@ Function FollowLine(in number basePower, in number distanceBefore, in number Unt
     If angleToGo <> 0 Then
       If diff > angleToGo Then
         power = LOW_POWER
+        cercaIncrocio = 1
         'Speaker.Tone(100, 2000, 10)
         If untilCrossing = 0 Then
           done = 1
