@@ -18,15 +18,15 @@ CalibrateTools()
 'WaitAnyKey()
 Speaker.Tone(100,3000, 40)
 
-@greenBlocksCount = 1
-@blueBlocksCount = 1
+@greenBlocksCount = 2
+@blueBlocksCount = 0
 blocchiPresi[1] = 0
 blocchiPresi[2] = 0
 blocchiPresi[3] = 0
 blocchiPresi[4] = 0
 
 'blocchiPresi
-CollectBlocksSmallBoat(1, 200)
+'CollectBlocksSmallBoat(1, 200)
 'CollectBlocksLargeBoat(-1,380)
 'SpinRight(90)
 

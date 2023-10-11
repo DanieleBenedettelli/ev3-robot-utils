@@ -34,18 +34,36 @@ Sub CalibrateRamp
   Motor.ResetCount(@MOTOR_RAMP)
 EndSub
 
-Sub UnloadRamp
-  MoveAbsolute(@MOTOR_GRABBER, 50, GRABBER_MID, "True", 1)
-  MoveAbsolute(@MOTOR_RAMP, 80, RAMP_UNLOAD, "True", 1)
-  'Program.Delay(1000) ' TODO debug
-  RaiseRamp(1)
-  Grab()
-EndSub
+'Sub UnloadRamp
+'  MoveAbsolute(@MOTOR_GRABBER, 50, GRABBER_MID, "True", 1)
+'  MoveAbsolute(@MOTOR_RAMP, 80, RAMP_UNLOAD, "True", 0)
+'  Program.Delay(400) ' TODO debug
+'  RaiseRamp(1)
+'  Grab()
+'EndSub
 
 Sub UnloadRampAndStop ' at the end of the mission
   MoveAbsolute(@MOTOR_GRABBER, 50, GRABBER_MID, "True" , 0)
   Program.Delay(200)
   MoveAbsolute(@MOTOR_RAMP, 80, RAMP_UNLOAD, "True", 0) ' non aspetta
+EndSub
+
+Sub UnloadRampOnSmallBoat
+  MoveAbsolute(@MOTOR_GRABBER, 50, GRABBER_MID, "True" , 0)
+  Program.Delay(200)
+  MoveAbsolute(@MOTOR_RAMP, 80, RAMP_UNLOAD, "True", 0) ' non aspetta
+  Program.Delay(300) ' TODO pausa da tarare
+  RaiseRamp(0)
+  Program.Delay(300) ' TODO pausa da tarare
+EndSub
+
+Sub UnloadRampOnLargeBoat
+  MoveAbsolute(@MOTOR_GRABBER, 50, GRABBER_MID, "True" , 0)
+  Program.Delay(300)
+  MoveAbsolute(@MOTOR_RAMP, 20, RAMP_UNLOAD, "True", 0) ' non aspetta
+  Program.Delay(500) ' TODO tara perché scarichi
+  RaiseRamp(0)
+  Program.Delay(350) ' TODO tara perché rampa non tocchi blocchi
 EndSub
 
 Function RaiseRamp (in number waitForCompletion)
@@ -118,8 +136,8 @@ EndSub
 Sub PreGrab
   MoveAbsolute(@MOTOR_GRABBER, 90, 60, "True", 1)
   Program.Delay(200)
-  MoveAbsolute(@MOTOR_GRABBER, 90, @GRABBER_PREPARE, "True", 0)
-  Program.Delay(200)
+  MoveAbsolute(@MOTOR_GRABBER, 100, @GRABBER_PREPARE, "True", 0)
+  Program.Delay(150)
 EndSub
 
 Sub GrabAndDropLast
@@ -147,7 +165,7 @@ EndSub
 
 Sub GrabAndDrop
   PreGrab()
-  Program.Delay(100) ' TODO tara tempo
+  'Program.Delay(100) ' TODO tara tempo
   Grab()
 EndSub
 

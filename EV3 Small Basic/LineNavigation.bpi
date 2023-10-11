@@ -1,3 +1,4 @@
+
 LINE_SENSOR_RIGHT = 4
 LINE_SENSOR_LEFT = 3
 
@@ -130,7 +131,115 @@ Function DriveUntilIntersection( in number speed)
   
 EndFunction
 
-Function FollowLine(in number basePower, in number distanceBefore, in number UntilCrossing, in number brake)
+Function FollowLine(in number basePower, in number distanceBefore, in number untilCrossing, in number brake)
+  eOld = 0
+  error = 0
+  
+  ' stati del seguilinea
+  S_DISTANCE = 0
+  S_INTERSECTION = 1
+  S_DONE = 2
+  
+  REFERENCE = 60
+  LOW_POWER = 30
+  
+  'TODO abbassare guadagni, perché sono stati tarati con la batteria scarica
+  ' e con la batteria piena, trema tutto
+  KP_FAST = 0.8
+  KP_SLOW = 0.4
+  KD = 5
+  SOGLIA_SCURA = 30
+  
+  angleToGo = @DISTANCE_FACTOR * distanceBefore
+  
+  pos0 = Motor.GetCount(@MOTOR_LEFT)
+  
+  direction = 1
+  If basePower < 0 Then ' se mai volessimo seguire la linea andando indietro...
+    direction = -1
+  EndIf
+  
+  lineFollowStatus = S_DISTANCE
+  gain = KP_FAST
+  power = basePower
+  
+  ' se la distanza da percorrere prima dell'incrocio è 0,
+  ' allora vai subito in modalità ricerca incrocio
+  If angleToGo = 0 Then
+    lineFollowStatus = S_INTERSECTION
+  EndIf
+  
+  Time.Reset1() ' timer per il rilevamento dell'incrocio
+  
+  While lineFollowStatus <> S_DONE
+    Time.Reset2() ' timer per misurare il tempo di ciclo
+    
+    ' PID line following
+    readingR = Sensor.ReadPercent(@LINE_SENSOR_RIGHT)
+    readingL = Sensor.ReadPercent(@LINE_SENSOR_LEFT)
+    error = (REFERENCE - readingL)
+    eD = error - eOld
+    eOld = error
+    
+    If lineFollowStatus = S_DISTANCE Then
+      ' sei su un incrocio, non sbandare! annulliamo la correzione
+      If readingL < SOGLIA_SCURA And readingR < SOGLIA_SCURA Then
+        gain = 0
+      Else
+        gain = KP_FAST
+      EndIf
+      
+      ' misura la distanza percorsa 
+      encLeft = Motor.GetCount(@MOTOR_LEFT)
+      diff = Math.Abs(encLeft - pos0)
+      
+      If diff > angleToGo Then ' una volta raggiunta la distanza minima
+        If untilCrossing = 0 Then ' se non devo cercare l'incrocio
+          lineFollowStatus = S_DONE ' abbiamo finito
+        Else ' se devo cercare l'incrocio...
+          Speaker.Tone(100, 400, 30)
+          Time.Reset1()
+          power = LOW_POWER
+          gain = KP_SLOW
+          lineFollowStatus = S_INTERSECTION ' proseguiamo cercando l'incrocio
+        EndIf
+      EndIf
+      
+    ElseIf lineFollowStatus = S_INTERSECTION Then
+      
+      ' ogni volta che uno dei sensori non vede scuro, resettare timer
+      If readingL > SOGLIA_SCURA Or readingR > SOGLIA_SCURA Then
+        Time.Reset1()
+      EndIf
+      
+      ' se entrambi i sensori vedono scuro sotto soglia per oltre 40ms, fermiamoci
+      If Time.Get1() > 40 Then
+        lineFollowStatus = S_DONE
+      EndIf
+      
+    EndIf ' fine macchina a stati
+    
+    ' aggiorna motori se non abbiamo finito
+    If lineFollowStatus <> S_DONE Then
+      u = direction*gain*( error + KD*eD ) ' PD controller
+      Motor.StartPower(@MOTOR_RIGHT, power + u)
+      Motor.StartPower(@MOTOR_LEFT, power - u)
+      timeLoop = Time.Get2()
+      'LCD.Text(1,1,90,1,"T: "+timeLoop+" ms  ")
+      Program.Delay(10-timeLoop)
+    EndIf
+    
+  EndWhile
+  
+  If brake<>0 Then
+    Motor.Stop(@MOTORS,"True")
+  Else
+    Motor.Stop(@MOTORS,"False")
+  EndIf
+EndFunction
+
+' vecchio seguilinea bacato e poco leggibile
+Function FollowLineOld(in number basePower, in number distanceBefore, in number untilCrossing, in number brake)
   eOld = 0
   error = 0
   REFERENCE = 60
@@ -139,37 +248,44 @@ Function FollowLine(in number basePower, in number distanceBefore, in number Unt
   cercaIncrocio = 0
   
   angleToGo = @DISTANCE_FACTOR * distanceBefore
-  Motor.ResetCount(@MOTOR_LEFT)
-  Motor.ResetCount(@MOTOR_RIGHT)
+  
+  ' se la distanza da percorrere prima dell'incrocio è 0, allora bisogna fermarsi all'incrocio
+  If angleToGo = 0 Then
+    untilCrossing = 1
+  EndIf
+  
+  'Motor.ResetCount(@MOTOR_LEFT)
+  'Motor.ResetCount(@MOTOR_RIGHT)
+  'Program.Delay(50)
   pos0 = Motor.GetCount(@MOTOR_LEFT)
   direction = 1
   If basePower < 0 Then
     direction = -1
   EndIf
   
-  Time.Reset1()
+  Time.Reset1() ' timer per il rilevamento dell'incrocio
   done = 0
   While done = 0
-    Time.Reset2()
+    Time.Reset2() ' timer per misurare il tempo di ciclo
     ' PID line following
     readingR = Sensor.ReadPercent(@LINE_SENSOR_RIGHT)
     readingL = Sensor.ReadPercent(@LINE_SENSOR_LEFT)
     error = (REFERENCE - readingL)
     'error = readingL - readingR ' differential reading remove the need for calibration
     eD = error - eOld
-    'eI = 0.8*eI + 0.05*error
     eOld = error
     
-    'u = direction*( 0.32*error + 1.8*eD ) ' funziona a 100Hz, ma sculetta
-    'u = direction*( 0.8*error + 3.5*eD ) ' funziona a 100Hz, ma sculetta
+    'TODO abbassare guadagni, perché sono stati tarati con la batteria scarica
+    ' con la batteria piena, trema tutto
+    ' TODO abbassare guadagno e guadagno derivativo
     If cercaIncrocio = 0 Then
-      u = direction*( 0.8*error + 4*eD ) ' funziona a 100Hz, ma sculetta
-    Else ' cerca incrocio
-      u = direction*( 0.4*error + 1.6*eD ) ' funziona a 100Hz, ma sculetta
+      u = direction*0.8*( error + 5*eD ) ' funziona a 100Hz, ma sculetta
+    Else ' se sta cercando incrocio, abbassa velocità e guadagno
+      u = direction*0.4*( error + 4*eD ) ' funziona a 100Hz, ma sculetta
     EndIf
     
     If readingL < 30 And readingR < 30 Then ' sei su un incrocio, non sbandare!
-      Speaker.Tone(100, 4000, 10)
+      'Speaker.Tone(100, 4000, 10)
       u = 0
     EndIf
     
@@ -185,10 +301,12 @@ Function FollowLine(in number basePower, in number distanceBefore, in number Unt
     If angleToGo <> 0 Then
       If diff > angleToGo Then
         power = LOW_POWER
-        cercaIncrocio = 1
-        'Speaker.Tone(100, 2000, 10)
-        If untilCrossing = 0 Then
+        If untilCrossing <> 0 Then
+          cercaIncrocio = 1
+          'Speaker.Tone(100, 1400, 50)
+        Else
           done = 1
+          Speaker.Tone(100, 400, 50)
         EndIf
       Else
         If untilCrossing=1 Then
@@ -197,11 +315,13 @@ Function FollowLine(in number basePower, in number distanceBefore, in number Unt
       EndIf
     EndIf
     
-    ' crossing detection
+    ' ogni volta che uno dei sensori non vede scuro, resettare timer
     If readingL > 30 Or readingR > 30 Then
       Time.Reset1()
     EndIf
-    If Time.Get1() > 40 Then ' se entrambi vedono sotto soglia per 40ms...
+    
+    ' se entrambi i sensori vedono scuro sotto soglia per oltre 40ms, fermiamoci
+    If Time.Get1() > 40 Then
       done = 1
     EndIf
     
@@ -221,5 +341,4 @@ Function FollowLine(in number basePower, in number distanceBefore, in number Unt
   Else
     Motor.Stop(@MOTORS,"False")
   EndIf
-  'Speaker.Tone(100, 4000, 20)
 EndFunction

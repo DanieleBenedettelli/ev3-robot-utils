@@ -117,7 +117,7 @@ Function CollectBlocksSmallBoat(in number direction, in number maxDistanceToSear
   searchOver = 0
   blockColor = "NONE"
   blockOffsetBlue = -15 ' mm
-  blockOffsetGreen = -25 ' mm
+  blockOffsetGreen = -30 ' mm
   sorpassaBlocco = 60
   searchSpeed = 40
   blocchiVisti = 0
@@ -236,7 +236,7 @@ Function CollectBlocksLargeBoat(in number direction, in number maxDistanceToSear
   Motor.StartSteer(@MOTORS, searchSpeed, 0)
   While searchOver = 0
     ReadColor(@BLOCK_SENSOR, @SHORT_RANGE, @SHOW_DEBUG, blockColor)
-    If (blockColor = "BLUE" Or blockColor = "GREEN") Then
+    If (blockColor = "BLUE" Or blockColor = "GREEN") Then ' TODO : aggiungere logica per scartare blocchi della barca grande (se li ho lasciati)
       Motor.Stop(@MOTORS, "True")
       
       Speaker.Tone(100, 5000, 100)
