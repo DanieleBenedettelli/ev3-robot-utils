@@ -49,6 +49,7 @@ Function DriveUntilLine(in number sensorPort, in number speed, in number brake, 
   Speaker.Tone(100,2000, 40)
 EndFunction
 
+' MAI USATO
 Function BackUpAlignCrossing()
   readingR = Sensor.ReadPercent(@LINE_SENSOR_RIGHT)
   If readingR < 15 Then
@@ -98,7 +99,7 @@ Function BackUpAlignCrossing()
 EndFunction
 
 Function FollowLineForDistance(in number distance)
-  FollowLine(60, distance, 0, 1)
+  FollowLine(80, distance, 0, 1)
 EndFunction
 
 Function FollowLineUntilCrossing(in number speed)
@@ -118,15 +119,16 @@ Function DriveUntilIntersection( in number speed)
     readingL = Sensor.ReadPercent(@LINE_SENSOR_LEFT)
     
     ' crossing detection
-    If readingL > 25 Or readingR > 25 Then
+    If readingL > 30 Or readingR > 30 Then
       Time.Reset1()
     EndIf
-    If Time.Get1() > 40 Then
+    If Time.Get1() > 30 Then
       done = 1
+      Motor.Stop(@MOTORS,"True")
     EndIf
     
   EndWhile
-  Motor.Stop(@MOTORS,"True")
+  'Motor.Stop(@MOTORS,"True")
   Speaker.Tone(100, 4000, 20)
   
 EndFunction
@@ -141,14 +143,14 @@ Function FollowLine(in number basePower, in number distanceBefore, in number unt
   S_DONE = 2
   
   REFERENCE = 60
-  LOW_POWER = 30
+  LOW_POWER = 35
   
   'TODO abbassare guadagni, perché sono stati tarati con la batteria scarica
   ' e con la batteria piena, trema tutto
   KP_FAST = 0.8
   KP_SLOW = 0.4
-  KD = 5
-  SOGLIA_SCURA = 30
+  KD = 5.5
+  SOGLIA_SCURA = 25
   
   angleToGo = @DISTANCE_FACTOR * distanceBefore
   

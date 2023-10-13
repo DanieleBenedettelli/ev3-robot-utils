@@ -137,7 +137,7 @@ Function CollectBlocksSmallBoat(in number direction, in number maxDistanceToSear
   Motor.StartSteer(@MOTORS, searchSpeed, 0)
   
   While searchOver = 0
-    ReadColor(@BLOCK_SENSOR, @SHORT_RANGE, @SHOW_DEBUG, blockColor)
+    ReadColor(@BLOCK_SENSOR, @SHORT_RANGE, @NO_DEBUG, blockColor)
     If (blockColor<>"NONE") Then
       Motor.Stop(@MOTORS, "True")
       If saveDistance = 1 Then
@@ -188,13 +188,13 @@ Function CollectBlocksSmallBoat(in number direction, in number maxDistanceToSear
     EndIf
   EndWhile
   
+  SPEED = 50
   If blocchiVisti= 2 Then
-    'DriveUntilLine(@LINE_SENSOR_LEFT, 30, 1 ,65, 20)
-    DriveForDistanceNoAcc(115, 40)
+    DriveForDistanceNoAcc(110, SPEED)
   ElseIf blocchiVisti = 3 Then
-    DriveForDistanceNoAcc(45, 40)
+    DriveForDistanceNoAcc(30, SPEED) ' era 35
   ElseIf blocchiVisti = 4 Then
-    DriveForDistanceNoAcc(-30, 40) ' era -25
+    DriveForDistanceNoAcc(-30, SPEED) ' era -25
   EndIf
 EndFunction
 
@@ -235,7 +235,7 @@ Function CollectBlocksLargeBoat(in number direction, in number maxDistanceToSear
   
   Motor.StartSteer(@MOTORS, searchSpeed, 0)
   While searchOver = 0
-    ReadColor(@BLOCK_SENSOR, @SHORT_RANGE, @SHOW_DEBUG, blockColor)
+    ReadColor(@BLOCK_SENSOR, @SHORT_RANGE, @NO_DEBUG, blockColor)
     If (blockColor = "BLUE" Or blockColor = "GREEN") Then ' TODO : aggiungere logica per scartare blocchi della barca grande (se li ho lasciati)
       Motor.Stop(@MOTORS, "True")
       
@@ -290,22 +290,7 @@ Function CollectBlocksLargeBoat(in number direction, in number maxDistanceToSear
   
   'Speaker.Tone(100, 5000, 1000)
   'WaitAnyKey()
-  DriveForDistanceNoAcc(distanzaIndietro, 40)
-  
-  'travelFromBeginning = Math.Abs((Motor.GetCount(@MOTOR_LEFT) - pos1 )/@DISTANCE_FACTOR)
-  'LCD.Clear()
-  'LCD.Text(1, 5, 30, 1, "d: " + travelFromBeginning + " mm ")
-  'LCD.Text(1, 5, 40, 1, "d: " + @DISTANCE_DOCK_LINE + " mm ")
-  'Speaker.Tone(100, 5000, 1000)
-  'Program.Delay(4000)
-  
-  'If travelFromBeginning > @DISTANCE_DOCK_LINE Then ' sono andato indietro oltre la linea nera
-  'Speaker.Play(100, "Forward")
-  '  DriveUntilLine(@LINE_SENSOR_LEFT, 20)
-  'Else
-  'Speaker.Play(100, "Backward")
-  '  DriveUntilLine(@LINE_SENSOR_LEFT, -20)
-  'EndIf
+  DriveForDistanceNoAcc(distanzaIndietro, 60)' vel era 40
   
 EndFunction
 

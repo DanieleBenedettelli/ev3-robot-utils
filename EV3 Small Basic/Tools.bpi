@@ -58,12 +58,12 @@ Sub UnloadRampOnSmallBoat
 EndSub
 
 Sub UnloadRampOnLargeBoat
-  MoveAbsolute(@MOTOR_GRABBER, 50, GRABBER_MID, "True" , 0)
-  Program.Delay(300)
-  MoveAbsolute(@MOTOR_RAMP, 20, RAMP_UNLOAD, "True", 0) ' non aspetta
-  Program.Delay(500) ' TODO tara perché scarichi
+  MoveAbsolute(@MOTOR_GRABBER, 60, GRABBER_MID, "True" , 0)
+  Program.Delay(200)
+  MoveAbsolute(@MOTOR_RAMP, 30, RAMP_UNLOAD, "True", 0) ' non aspetta, vel era 30
+  Program.Delay(400) ' TODO tara perché scarichi, era 500
   RaiseRamp(0)
-  Program.Delay(350) ' TODO tara perché rampa non tocchi blocchi
+  Program.Delay(300) ' TODO tara perché rampa non tocchi blocchi, era 400
 EndSub
 
 Function RaiseRamp (in number waitForCompletion)
@@ -127,18 +127,13 @@ Function ReleaseBoat(in number waitForCompletion)
   MoveAbsolute(@MOTOR_GRABBER, speed, diff, "True", 0)
 EndFunction
 
-Sub GrabBoat
+Function GrabBoat(in number waitForCompletion)
   MoveAbsolute(@MOTOR_GRABBER, 70, @GRABBER_GRAB_BOAT, "True", 0)
-  Program.Delay(300) ' TODO tara tempo
-  Motor.Stop(@MOTOR_GRABBER, "True")
-EndSub
-
-Sub PreGrab
-  MoveAbsolute(@MOTOR_GRABBER, 90, 60, "True", 1)
-  Program.Delay(200)
-  MoveAbsolute(@MOTOR_GRABBER, 100, @GRABBER_PREPARE, "True", 0)
-  Program.Delay(150)
-EndSub
+  If waitForCompletion <> 0 Then
+    Program.Delay(300) ' TODO tara tempo
+    Motor.Stop(@MOTOR_GRABBER, "True")
+  EndIf
+EndFunction
 
 Sub GrabAndDropLast
   PreGrab()
@@ -152,15 +147,21 @@ Sub GrabAndDropLast
   'Motor.Stop(@MOTOR_GRABBER, "False")
 EndSub
 
+Sub PreGrab
+  MoveAbsolute(@MOTOR_GRABBER, 90, 60, "True", 1)
+  Program.Delay(50)
+  MoveAbsolute(@MOTOR_GRABBER, 100, @GRABBER_PREPARE, "True", 0)
+  Program.Delay(200)
+EndSub
+
 Sub Grab
-  MoveAbsolute(@MOTOR_GRABBER, 35, @GRABBER_GRAB, "True", 0)
-  Program.Delay(300) ' TODO tara tempo
+  Speaker.Tone(100, 500, 30)
+  MoveAbsolute(@MOTOR_GRABBER, 35, @GRABBER_GRAB, "True", 0) ' vel era 35
+  Program.Delay(200) ' TODO tara tempo
   ' stringi per tempo
-  Motor.StartPower(@MOTOR_GRABBER, -40)
+  Motor.StartPower(@MOTOR_GRABBER, -50)
   Program.Delay(300)
   Motor.Stop(@MOTOR_GRABBER, "True")
-  'Program.Delay(20)
-  'Motor.Stop(@MOTOR_GRABBER, "False")
 EndSub
 
 Sub GrabAndDrop

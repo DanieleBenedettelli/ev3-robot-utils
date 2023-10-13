@@ -70,6 +70,8 @@ LCD.Clear()
 Time.Reset9()
 
 
+'WaitAnyKey()
+'Program.End()
 
 
 ' ESCI DA AREA START E LEGGI ORDINI
@@ -83,11 +85,8 @@ LCD.Text(1, 10, 40, 1, "order2 = " + order2 + "  ")
 
 'Thread.Run = sayOrders ' non bloccante
 
-'ReleaseBoat(0)
-'DriveForDistanceNoAcc( 20, -60)
-
 ' SPINGI E RIFORNISCI BARCA
-DriveForDistance( DISTANCE_FUEL, 40 ) ' speed era 30
+DriveForDistanceNoAcc( DISTANCE_FUEL, 40 ) ' speed era 40, usava rampa accelerazione
 DriveForDistanceNoAcc( DISTANCE_FUEL_BACK, -90)
 
 ' VAI VERSO CONTAINER
@@ -114,53 +113,47 @@ CollectBlocksSmallBoat(SEARCH_FWD, 200)
 SpinRight(90)
 Program.Delay(100) ' per spegnere inerzia
 
-'FollowLine(70, 230, 1, 1 )
-'DriveForDistanceNoAcc(30, 50)
-'ReleaseBoat(0) ' apri gancio senza aspettare
-'FollowLine(70, 190, 0, 0) 
-'FollowLine(25, 80, 0, 1) 
-'GrabBoat()
-
 FollowLine(80, 520, 0, 1 )
-ReleaseBoat(1) ' apri gancio senza aspettare (o aspettare?)
+ReleaseBoat(0) ' apri gancio senza aspettare (o aspettare?)
 FollowLine(30, 90, 0, 1) 
-GrabBoat()
+GrabBoat(1)
 
 
 ' VAI VERSO MARE APERTO CON BARCA PICCOLA
-ArcLeftNoAcc(135, 60) ' TODO tara velocità, era 50
+ArcLeftNoAcc(135, 60) 
 DriveUntilLine(@LINE_SENSOR_LEFT, 60, 1, 60, 25) 
-ArcRightNoAcc(45,40) ' TODO vel era 30, può essere portata a 60?
+ArcRightNoAcc(45, 50) ' TODO vel era 30, può essere portata a 60?
 DriveForDistanceNoAcc(50, 40)
-FollowLine(50, 130, 0, 1 ) ' non andare troppo avanti per non perdere tempo: 150mm o meno?
+FollowLine(70, 130, 0, 1 ) ' non andare troppo avanti per non perdere tempo: 150mm o meno? vel era 50
  
 ' SCARICA POI SGANCIA BARCA PICCOLA
 UnloadRampOnSmallBoat()
+DriveUntilIntersection(-70) ' -70 OK
+GrabBoat(0)
+DriveForDistanceNoAcc(60, 70) ' avanti per andare sulla linea
+SpinLeft(92)
 
-DriveUntilIntersection(-40) 
-GrabBoat()
-DriveForDistanceNoAcc(35, 40) ' avanti per andare sulla linea
-SpinLeft(90)
+'WaitAnyKey()
 
 ' VAI A PRENDERE IL BLOCCO BIANCO
-FollowLine(60, 325, 0, 1) ' la distanza regola quanto si va vicini al blocco bianco
+FollowLine(80, 325, 0, 1) ' la distanza regola quanto si va vicini al blocco bianco
 SpinRight(92) ' 90 
-DriveForDistanceNoAcc(-15, 30 ) ' distance, speed
+DriveForDistanceNoAcc(-15, 40 ) ' distance, speed
 GrabAndDrop()
 
 ' prendi blocchi colorati rimasti
-DriveForDistanceNoAcc(-170, 70)
+DriveForDistanceNoAcc(-170, 80) ' vel 80 OK
 
-' MANOVRA A BATTUTA: NECESSARIA!
+' MANOVRA A BATTUTA NECESSARIA!
 ArcLeftNoAcc(-90)
 Motor.StartPower(MOTORS,-60)
 Program.Delay(400)
 Motor.Stop(MOTORS,"True")
-DriveForDistanceNoAcc(36,20) ' primo parametro determina la distanza dai blocchi
+DriveForDistanceNoAcc(36,40) ' primo parametro determina la distanza dai blocchi, vel OK era 20
 ArcLeftNoAcc(89) '90 ?
 
 CollectBlocksLargeBoat(SEARCH_BACK, 500)
-'LCD.Text(1, 2, 30, 2, "  PUSH BLOCKS   ")
+
 'PushBlocks() ' funziona anche senza
 
 ' PRENDI BARCA GRANDE ANDANDO A BATTUTA
@@ -169,14 +162,14 @@ ArcLeftNoAcc(-90)
 Motor.StartPower(MOTORS,-40)
 Program.Delay(400)
 Motor.Stop(MOTORS,"True")
-DriveForDistanceNoAcc(75,40) ' primo parametro determina l'allineamento alla barca, velocità OK era 30
+DriveForDistanceNoAcc(75, 50) ' primo parametro determina l'allineamento alla barca, velocità OK era 50
 ArcRightNoAcc(90)
 ReleaseBoat(0)
 Program.Delay(200)
 
 ' aggancia
-DriveForDistanceNoAcc(40,15) 'primo parametro determina l'avvicinamento, secondo la velocità
-GrabBoat()
+DriveForDistanceNoAcc(45,15) 'primo parametro determina l'avvicinamento, secondo la velocità
+GrabBoat(1)
 'Program.Delay(100) ' era necessaria?
 ArcLeftNoAcc(135, 60)
 
@@ -184,32 +177,17 @@ ArcLeftNoAcc(135, 60)
 DriveUntilLine(LINE_SENSOR_RIGHT, 60, 1, 65, 25) ' speed,  brake, white, black)
 ArcLeftNoAcc(45)
 
-' VAI FUORI DAL PORTO SPINGENDO ENTRAMBE LE BARCHE
-' speed 70 funziona
-'FollowLine(speedOut, 250, 1, 0 ) ' coast at intersection, don't brake
-'Motor.MoveSteer(@MOTORS, speedOut, 0, 50 *  @DISTANCE_FACTOR, "False")
-'FollowLine(speedOut, 460, 1, 0 ) ' coast at intersection, don't brake
-'Motor.MoveSteer(@MOTORS, speedOut, 0, 50 *  @DISTANCE_FACTOR, "False")
-'FollowLine(speedOut, 650, 1, 1) ' frena a incrocio
-
 speedOut = 100
-' TODO debug FollowLine
 FollowLine(speedOut, 800, 0, 1) ' veloce prima della barca piccola
 FollowLine(40, 100, 0, 1) ' vai piano per non urtare forte la barca piccola
-Program.Delay(100)
 FollowLine(speedOut, 630, 1, 1) ' vai veloce frena a incrocio
 
-'FollowLine(speedOut, 1500, 1, 1) ' vai veloce frena a incrocio
+DriveForDistanceNoAcc(-70, 100) ' indietro -65 OK
 
-' manovra barca grande
-DriveForDistanceNoAcc(-60, 100)
-
-'ArcRight(90) ' angle ,speed
-ArcRightNoAcc(90, 50) ' meglio?
-'WaitAnyKey()
+ArcRightNoAcc(90, 60) ' vel era 60
 
 ' AGGANCIA CONTAINER ROSSO
-FollowLine(80, 240, 0 , 0) ' speed 60 funzionava, 270mm
+FollowLine(90, 240, 0 , 0) ' speed 80 funzionava, 240mm
 'DriveForDistanceNoAcc(90, 100) ' borda!
 
 DriveForDistanceNoAcc(-660, 100) ' usare muro come sponda per container da scaricare

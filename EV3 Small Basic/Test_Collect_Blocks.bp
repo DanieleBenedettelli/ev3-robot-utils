@@ -26,7 +26,7 @@ blocchiPresi[3] = 0
 blocchiPresi[4] = 0
 
 'blocchiPresi
-'CollectBlocksSmallBoat(1, 200)
+CollectBlocksSmallBoat(1, 200)
 'CollectBlocksLargeBoat(-1,380)
 'SpinRight(90)
 
@@ -43,7 +43,7 @@ While "True"
   EndIf
   If Text.IsSubText( Buttons.Current, "R") Then
     Speaker.Tone(100, 3000, 40)
-    UnloadRamp()
+    UnloadRampOnSmallBoat()
 
   EndIf
   Program.Delay(100)
