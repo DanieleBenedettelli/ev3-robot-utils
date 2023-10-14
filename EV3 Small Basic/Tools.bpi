@@ -58,8 +58,8 @@ Sub UnloadRampOnSmallBoat
 EndSub
 
 Sub UnloadRampOnLargeBoat
-  MoveAbsolute(@MOTOR_GRABBER, 60, GRABBER_MID, "True" , 0)
-  Program.Delay(200)
+  MoveAbsolute(@MOTOR_GRABBER, 60, 120, "True" , 0)
+  Program.Delay(400)
   MoveAbsolute(@MOTOR_RAMP, 30, RAMP_UNLOAD, "True", 0) ' non aspetta, vel era 30
   Program.Delay(400) ' TODO tara perché scarichi, era 500
   RaiseRamp(0)

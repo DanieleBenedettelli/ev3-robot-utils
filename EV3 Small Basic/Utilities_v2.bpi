@@ -199,9 +199,6 @@ Function CollectBlocksSmallBoat(in number direction, in number maxDistanceToSear
 EndFunction
 
 
-' distanza da dove parto a retromarcia col robot per prendere i blocchi per la barca grande
-' e la linea dei container colorati
-
 Function UltimoBloccoPreso(out number lastId)
   id = 4
   lastId = 4
@@ -218,9 +215,9 @@ Function CollectBlocksLargeBoat(in number direction, in number maxDistanceToSear
   searchOver = 0
   blockColor = "NONE"
   blockOffset = -30 ' mm
-  searchSpeed = 40
+  searchSpeed = 60 ' 40 era OK
   
-  DriveForDistanceNoAcc(-150,40)
+  DriveForDistanceNoAcc(-150,searchSpeed)
   
   If maxDistanceToSearch = 0 Then
     maxDistanceToSearch = 380 ' mm

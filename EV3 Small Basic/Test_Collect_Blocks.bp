@@ -43,8 +43,9 @@ While "True"
   EndIf
   If Text.IsSubText( Buttons.Current, "R") Then
     Speaker.Tone(100, 3000, 40)
-    UnloadRampOnSmallBoat()
-
+    Time.Reset7()
+    UnloadRampOnLargeBoat()
+    LCD.Text(1, 2, 70, 2, "drop: " + Time.Get7()/1000 + " ms  ")
   EndIf
   Program.Delay(100)
 EndWhile

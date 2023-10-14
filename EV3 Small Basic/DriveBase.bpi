@@ -8,11 +8,11 @@ DISTANCE_FACTOR = 2.03 ' 114.591559/WHEEL_DIAMETER
 TURNING_FACTOR = 3.18 ' WHEELBASE / WHEEL_DIAMETER
 
 Function SpinRight(in number degrees)
-  Spin(@MOTORS, Math.Abs(degrees), -60) ' vel -50 era OK
+  Spin(@MOTORS, Math.Abs(degrees), -65) ' vel -50 era OK
 EndFunction
 
 Function SpinLeft(in number degrees)
-  Spin(@MOTORS, Math.Abs(degrees), 60) ' vel 50 era OK
+  Spin(@MOTORS, Math.Abs(degrees), 65) ' vel 50 era OK
 EndFunction
 
 Function ArcLeftNoAcc(in number degrees, in number speed)
@@ -23,7 +23,7 @@ Function ArcLeftNoAcc(in number degrees, in number speed)
 EndFunction
 
 Function ArcLeftNoAcc(in number degrees)
-  ArcLeftNoAcc(degrees, 60) ' vel 50 era OK
+  ArcLeftNoAcc(degrees, 65) ' vel 50 era OK
 EndFunction
 
 Function ArcRightNoAcc(in number degrees, in number speed)
@@ -34,7 +34,7 @@ Function ArcRightNoAcc(in number degrees, in number speed)
 EndFunction
 
 Function ArcRightNoAcc(in number degrees)
-  ArcRightNoAcc(degrees, 60) ' vel 50 era OK
+  ArcRightNoAcc(degrees, 65) ' vel 50 era OK
 EndFunction
 
 Function ArcLeft(in number degrees) ' posive makes an arc forward

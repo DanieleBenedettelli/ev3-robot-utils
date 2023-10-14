@@ -25,7 +25,7 @@ DISTANCE_LARGE_BOAT = 220
 DISTANCE_BLOCK1 = 150'135
 DISTANCE_BLOCK2 = 200'185
 DISTANCE_FUEL = 75
-DISTANCE_FUEL_BACK = 72
+DISTANCE_FUEL_BACK = 67
 
 SEARCH_FWD = 1
 SEARCH_BACK = -1
@@ -89,68 +89,85 @@ LCD.Text(1, 10, 40, 1, "order2 = " + order2 + "  ")
 DriveForDistanceNoAcc( DISTANCE_FUEL, 40 ) ' speed era 40, usava rampa accelerazione
 DriveForDistanceNoAcc( DISTANCE_FUEL_BACK, -90)
 
-' VAI VERSO CONTAINER
-SpinRight(90)
+Time.Reset8()
 
-FollowLine(80, 200, 0, 1)
+' VAI VERSO CONTAINER ESTROSO (2.50")
 SpinRight(90)
-DriveForDistanceNoAcc(400,-90)
+FollowLine(80, 150, 0, 1)
+ArcLeftNoAcc(90)
+DriveForDistanceNoAcc(160, 70) ' primo par determina distanza dai blocchi
+ArcRightNoAcc(90)
+Program.Delay(50)
 
+' VAI VERSO CONTAINER CLASSICO (richiede 3.60")
+'SpinRight(90)
+'FollowLine(80, 200, 0, 1)
+'SpinRight(90)
+'DriveForDistanceNoAcc(400,-90)
 ' VAI A BATTUTA
-Motor.StartPower(MOTORS,-60) ' era -60
-Program.Delay(350)
-Motor.Stop(MOTORS,"True")
-'Program.Delay(100)
+'Motor.StartPower(MOTORS,-60) ' era -60
+'Program.Delay(350)
+'Motor.Stop(MOTORS,"True")
+'DriveForDistanceNoAcc(40,30) ' primo parametro determina la distanza dai blocchi
+'ArcLeftNoAcc(90, 50)
 
-DriveForDistanceNoAcc(40,30) ' primo parametro determina la distanza dai blocchi
-ArcLeftNoAcc(90, 50)
-'LCD.Text(1, 2, 80, 2, "time: " + Time.Get9()/1000 + "  ")
+
+LCD.Clear()
+LCD.Text(1, 2, 100, 2, "time: " + Time.Get8()/1000 + "  ")
+'Speaker.Tone(100, 5000, 2000)
+'Program.Delay(30000)
+'Program.End()
+
+'WaitAnyKey()
+
 CollectBlocksSmallBoat(SEARCH_FWD, 200)
-'LCD.Text(1, 2, 30, 2, "  PUSH BLOCKS   ")
 'PushBlocks()
 
 ' VAI DA CONTAINER A BARCA PICCOLA
 SpinRight(90)
 Program.Delay(100) ' per spegnere inerzia
 
-FollowLine(80, 520, 0, 1 )
+FollowLine(80, 500, 0, 1 )
 ReleaseBoat(0) ' apri gancio senza aspettare (o aspettare?)
-FollowLine(30, 90, 0, 1) 
+FollowLine(30, 110, 0, 1) 
 GrabBoat(1)
-
 
 ' VAI VERSO MARE APERTO CON BARCA PICCOLA
 ArcLeftNoAcc(135, 60) 
 DriveUntilLine(@LINE_SENSOR_LEFT, 60, 1, 60, 25) 
 ArcRightNoAcc(45, 50) ' TODO vel era 30, può essere portata a 60?
 DriveForDistanceNoAcc(50, 40)
-FollowLine(70, 130, 0, 1 ) ' non andare troppo avanti per non perdere tempo: 150mm o meno? vel era 50
+' non andare troppo avanti per non perdere tempo: 50mm (per portarla fuori, aggiungere 180mm) vel era 70
+FollowLine(80, 50, 0, 1 )  
  
 ' SCARICA POI SGANCIA BARCA PICCOLA
 UnloadRampOnSmallBoat()
+
 DriveUntilIntersection(-70) ' -70 OK
 GrabBoat(0)
-DriveForDistanceNoAcc(60, 70) ' avanti per andare sulla linea
-SpinLeft(92)
-
-'WaitAnyKey()
+DriveForDistanceNoAcc(63, 80) ' avanti per andare sulla linea
+Program.Delay(50)
+SpinLeft(90)
 
 ' VAI A PRENDERE IL BLOCCO BIANCO
-FollowLine(80, 325, 0, 1) ' la distanza regola quanto si va vicini al blocco bianco
-SpinRight(92) ' 90 
-DriveForDistanceNoAcc(-15, 40 ) ' distance, speed
+FollowLine(75, 330, 0, 1) ' la distanza regola quanto si va vicini al blocco bianco
+Program.Delay(50)
+SpinRight(92) ' 92 era OK
+DriveForDistanceNoAcc(-25, 40 ) ' distance, speed
 GrabAndDrop()
 
-' prendi blocchi colorati rimasti
-DriveForDistanceNoAcc(-170, 80) ' vel 80 OK
+'TENTATIVO SENZA BATTUTA (TROPPO RISCHIOSO)
+'DriveForDistanceNoAcc(-350, 80) 
 
-' MANOVRA A BATTUTA NECESSARIA!
+' prendi blocchi colorati rimasti
+DriveForDistanceNoAcc(-170, 80) 
+' MANOVRA A BATTUTA NECESSARIA?
 ArcLeftNoAcc(-90)
 Motor.StartPower(MOTORS,-60)
 Program.Delay(400)
 Motor.Stop(MOTORS,"True")
-DriveForDistanceNoAcc(36,40) ' primo parametro determina la distanza dai blocchi, vel OK era 20
-ArcLeftNoAcc(89) '90 ?
+DriveForDistanceNoAcc(30,40) ' primo parametro determina la distanza dai blocchi, vel OK era 20
+ArcLeftNoAcc(88) 
 
 CollectBlocksLargeBoat(SEARCH_BACK, 500)
 
@@ -159,8 +176,8 @@ CollectBlocksLargeBoat(SEARCH_BACK, 500)
 ' PRENDI BARCA GRANDE ANDANDO A BATTUTA
 ArcLeftNoAcc(-90)
 ' A battuta
-Motor.StartPower(MOTORS,-40)
-Program.Delay(400)
+Motor.StartPower(MOTORS,-60)
+Program.Delay(300)
 Motor.Stop(MOTORS,"True")
 DriveForDistanceNoAcc(75, 50) ' primo parametro determina l'allineamento alla barca, velocità OK era 50
 ArcRightNoAcc(90)
@@ -168,7 +185,7 @@ ReleaseBoat(0)
 Program.Delay(200)
 
 ' aggancia
-DriveForDistanceNoAcc(45,15) 'primo parametro determina l'avvicinamento, secondo la velocità
+DriveForDistanceNoAcc(50, 25) 'primo parametro determina l'avvicinamento, secondo la velocità
 GrabBoat(1)
 'Program.Delay(100) ' era necessaria?
 ArcLeftNoAcc(135, 60)
@@ -177,26 +194,30 @@ ArcLeftNoAcc(135, 60)
 DriveUntilLine(LINE_SENSOR_RIGHT, 60, 1, 65, 25) ' speed,  brake, white, black)
 ArcLeftNoAcc(45)
 
+' ESCI DAL PORTO VELOCEMENTE
 speedOut = 100
-FollowLine(speedOut, 800, 0, 1) ' veloce prima della barca piccola
+FollowLine(speedOut, 750, 0, 1) ' veloce prima della barca piccola
 FollowLine(40, 100, 0, 1) ' vai piano per non urtare forte la barca piccola
-FollowLine(speedOut, 630, 1, 1) ' vai veloce frena a incrocio
+FollowLine(speedOut, 680, 1, 1) ' vai veloce frena a incrocio
 
-DriveForDistanceNoAcc(-70, 100) ' indietro -65 OK
+DriveForDistanceNoAcc(20, 50) ' spingi barca piccola?
 
-ArcRightNoAcc(90, 60) ' vel era 60
+DriveForDistanceNoAcc(-90, 100) ' indietro -65 OK
+
+ArcRightNoAcc(90, 50) ' vel era 60
 
 ' AGGANCIA CONTAINER ROSSO
-FollowLine(90, 240, 0 , 0) ' speed 80 funzionava, 240mm
-'DriveForDistanceNoAcc(90, 100) ' borda!
+FollowLine(90, 250, 0 , 0) ' speed 80 funzionava, 240mm
 
-DriveForDistanceNoAcc(-660, 100) ' usare muro come sponda per container da scaricare
+Time.Reset8()
 
+DriveForDistanceNoAcc(-510, 100) 
 UnloadRampOnLargeBoat()
+DriveForDistanceNoAcc(-20, 100) ' distance , speed
 
-DriveForDistanceNoAcc(-40, 100) ' distance , speed
 
 LCD.Clear()
+LCD.Text(1, 2, 70, 2, "last: " + Time.Get8()/1000 + "  ")
 LCD.Text(1, 2, 100, 2, "time: " + Time.Get9()/1000 + "  ")
 Speaker.Tone(100, 5000, 2000)
 Program.Delay(30000)
