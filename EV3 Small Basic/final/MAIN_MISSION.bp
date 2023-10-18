@@ -1,0 +1,222 @@
+folder "prjs" "WRO23"
+include "Manovre"
+include "Colori"
+include "Navigazione"
+include "Strumenti"
+include "FunzioniComplesse"
+
+SLOW_SPEED = 20
+NORMAL_SPEED = 50
+FAST_SPEED = 70
+MOTOR_RIGHT = "C"
+MOTOR_LEFT = "B"
+MOTOR_RAMP = "A"
+MOTORS = MOTOR_RIGHT + MOTOR_LEFT
+BLOCK_SENSOR = 2
+LINE_SENSOR_RIGHT = 4
+LINE_SENSOR_LEFT = 3
+
+WHEEL_DIAMETER = 56 ' mm
+WHEELBASE = 178 ' mm
+DISTANCE_FACTOR = 2.03 ' 114.591559/WHEEL_DIAMETER
+TURNING_FACTOR = 3.2 '3.235 ' WHEELBASE / WHEEL_DIAMETER
+
+' mm
+DISTANCE_LARGE_BOAT = 210
+DISTANCE_BLOCK1 = 150
+DISTANCE_BLOCK2 = 200
+
+CERCA_AVANTI = 1
+CERCA_INDIETRO = -1
+
+LCD.Clear()
+Motor.Invert(MOTOR_LEFT)
+Sensor.SetMode(LINE_SENSOR_LEFT, 0) ' set reflected light intensity mode
+Sensor.SetMode(LINE_SENSOR_RIGHT, 0) ' set reflected light intensity mode
+Sensor.SetMode(BLOCK_SENSOR, 4) ' RGB mode
+Motor.ResetCount(MOTOR_GRABBER)
+Motor.ResetCount(MOTOR_RAMP)
+
+'  __  __    _    ___ _   _
+' |  \/  |  / \  |_ _| \ | |
+' | |\/| | / _ \  | ||  \| |
+' | |  | |/ ___ \ | || |\  |
+' |_|  |_/_/   \_\___|_| \_|
+
+' NEW HARDWARE 03-10-2023
+' API SEMPLIFICATA 18-10-2023
+
+order1 = "NONE"
+order2 = "NONE"
+greenBlocksCount = 0
+blueBlocksCount = 0
+blocchiPresi[1] = 0
+blocchiPresi[2] = 0
+blocchiPresi[3] = 0
+blocchiPresi[4] = 0
+
+' CALIBRATION
+Motor.Stop(MOTORS, "True")
+CalibraStrumenti()
+
+LCD.Clear()
+LCD.Text(1, 10, 30, 2, "PRESS")
+LCD.Text(1, 10, 50, 2, " TO ")
+LCD.Text(1, 10, 70, 2, "START")
+AspettaUnTasto()
+Speaker.Tone(100,3000, 40)
+LCD.Clear()
+
+Time.Reset9()
+
+'AspettaUnTasto()
+'Program.End()
+
+' ESCI DA AREA START E LEGGI ORDINI
+VaiPerDistanza(80, 40)
+VaiFinoLinea(LINE_SENSOR_LEFT, 40, 1, 75, 22)
+ScansionaOrdine(DISTANCE_LARGE_BOAT, DISTANCE_BLOCK1, DISTANCE_BLOCK2, order1, order2)
+VaiFinoIncrocio(40)
+
+LCD.Clear()
+LCD.Text(1, 10, 30, 1, "order1 = " + order1 + "  ")
+LCD.Text(1, 10, 40, 1, "order2 = " + order2 + "  ")
+
+'Thread.Run = sayOrders ' non bloccante
+
+' SPINGI E RIFORNISCI BARCA
+VaiPerDistanza( 60, 40 )
+VaiPerDistanza( -75, 90) ' indietro
+
+'AspettaUnTasto()
+Time.Reset8()
+
+' VAI VERSO CONTAINER ESTROSO (2.50")
+SpinDestra(91) ' era 90
+'AspettaUnTasto()
+
+SeguiLinea(50, 140, 0, 1)
+ArcoSinistra(90, 65)
+VaiPerDistanza(160, 60) ' era 160mm, primo par determina distanza dai blocchi
+ArcoDestra(90, 65)
+Pausa(60)
+
+' VAI VERSO CONTAINER CLASSICO (richiede 3.60")
+'SpinDestra(90)
+'SeguiLinea(80, 200, 0, 1)
+'SpinDestra(90)
+'VaiPerDistanza(400,-90)
+' VAI A BATTUTA
+'Motor.StartPower(MOTORS,-60) ' era -60
+'Pausa(350)
+'Motor.Stop(MOTORS,"True")
+'VaiPerDistanza(40,30) ' primo parametro determina la distanza dai blocchi
+'ArcoSinistra(90, 50)
+
+'LCD.Clear()
+'LCD.Text(1, 2, 100, 2, "time: " + Time.Get8()/1000 + "  ")
+'Speaker.Tone(100, 5000, 2000)
+'Pausa(30000)
+'Program.End()
+
+'AspettaUnTasto()
+PrendiBlocchiPerBarcaPiccola(CERCA_AVANTI, 200)
+
+'AspettaUnTasto()
+
+' VAI DA CONTAINER A BARCA PICCOLA
+Pausa(100) ' per spegnere inerzia
+SpinDestra(90)
+Pausa(100) ' per spegnere inerzia
+
+SeguiLinea(80, 500, 0, 1 )
+LasciaBarca(0) ' apri gancio senza aspettare (o aspettare?)
+SeguiLinea(30, 110, 0, 1) 
+PrendiBarca(1)
+
+' VAI VERSO MARE APERTO CON BARCA PICCOLA
+ArcoSinistra(135, 60) 
+VaiFinoLinea(@LINE_SENSOR_LEFT, 60, 1, 60, 25) 
+ArcoDestra(45, 50) ' TODO vel era 30, può essere portata a 60?
+VaiPerDistanza(50, 40)
+' non andare troppo avanti per non perdere tempo: 50mm (per portarla fuori, aggiungere 180mm) vel era 70
+SeguiLinea(55, 90, 0, 1 )  
+ 
+' SCARICA POI SGANCIA BARCA PICCOLA
+ScaricaSuBarcaPiccola()
+VaiFinoIncrocio(-65) ' -70 OK
+PrendiBarca(0)
+VaiPerDistanza(63, 80) ' avanti per andare sulla linea
+Pausa(50)
+SpinSinistra(90)
+
+' VAI A PRENDERE IL BLOCCO BIANCO
+SeguiLinea(75, 330, 0, 1) ' la distanza regola quanto si va vicini al blocco bianco
+Pausa(50)
+SpinDestra(90, 50) ' 92 era OK?
+VaiPerDistanza(-25, 40 ) ' distance, speed
+PrendiBlocco()
+
+'TENTATIVO SENZA BATTUTA (TROPPO RISCHIOSO)
+VaiPerDistanza(-300, 70) 
+Pausa(50)
+
+' MANOVRA A BATTUTA NECESSARIA?
+'VaiPerDistanza(-170, 80) 
+'ArcoSinistra(-90)
+'Motor.StartPower(MOTORS,-60)
+'Pausa(400)
+'Motor.Stop(MOTORS,"True")
+'VaiPerDistanza(35,40) ' primo parametro determina la distanza dai blocchi, vel OK era 40
+'ArcoSinistra(88) ' 88?
+
+PrendiBlocchiPerBarcaGrande(CERCA_INDIETRO, 500)
+
+' PRENDI BARCA GRANDE ANDANDO A BATTUTA
+ArcoSinistra(-90)
+' A battuta
+Motor.StartPower(MOTORS,-60)
+Pausa(300)
+Motor.Stop(MOTORS,"True")
+VaiPerDistanza(75, 50) ' primo parametro determina l'allineamento alla barca, velocità OK era 50
+ArcoDestra(90)
+LasciaBarca(0)
+Pausa(200)
+
+' aggancia
+VaiPerDistanza(50, 25) 'primo parametro determina l'avvicinamento, secondo la velocità
+PrendiBarca(1)
+'Pausa(100) ' era necessaria?
+ArcoSinistra(135, 60)
+
+'vai verso linea
+VaiFinoLinea(LINE_SENSOR_RIGHT, 60, 1, 65, 25) ' speed,  brake, white, black)
+ArcoSinistra(45)
+
+' ESCI DAL PORTO VELOCEMENTE
+speedOut = 100
+SeguiLinea(speedOut, 750, 0, 1) ' veloce prima della barca piccola
+SeguiLinea(40, 100, 0, 1) ' vai piano per non urtare forte la barca piccola
+SeguiLinea(speedOut, 680, 1, 1) ' vai veloce frena a incrocio
+
+VaiPerDistanza(20, 50) ' spingi barca piccola?
+VaiPerDistanza(-90, 100) ' indietro 
+
+ArcoDestra(90, 50) ' vel era 60
+
+' AGGANCIA CONTAINER ROSSO
+SeguiLinea(90, 250, 0 , 0) ' speed 80 funzionava, 240mm
+
+Time.Reset8()
+
+VaiPerDistanza(-510, 100) 
+ScaricaSuBarcaGrande()
+VaiPerDistanza(-20, 100) ' distance , speed
+
+LCD.Clear()
+LCD.Text(1, 2, 70, 2, "last: " + Time.Get8()/1000 + "  ")
+LCD.Text(1, 2, 100, 2, "time: " + Time.Get9()/1000 + "  ")
+Speaker.Tone(100, 5000, 2000)
+Pausa(30000)
+
+Program.End()

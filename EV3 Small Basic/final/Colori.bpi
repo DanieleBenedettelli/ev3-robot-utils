@@ -1,0 +1,168 @@
+
+BLOCK_SENSOR = 2
+LONG_RANGE = 1
+SHORT_RANGE = 0
+SHOW_DEBUG = 1
+NO_DEBUG = 0
+
+Function LeggiColoreRobusto(in number SensorPort, in number longRange, out string color)
+  COLORS[0] = "BLUE"
+  COLORS[1] = "GREEN"
+  COLORS[2] = "WHITE"
+  COLORS[3] = "RED"
+  COLORS[4] = "YELLOW"
+  LeggiColoreRobusto(sensorPort, COLORS, 3, 7, longRange, color)
+EndFunction
+
+Function LeggiColoreRobusto(in number sensorPort, in string[] COLORS, in number LEN, in number samples, in number longRange, out string color)
+  
+  count = Vector.Init(LEN, 0)
+  
+  For s = 0 To samples
+    LeggiColore(sensorPort, longRange, 0, sample)
+    For k = 0 To LEN
+      If sample = COLORS[k] Then
+        count[k] = count[k] + 1
+      EndIf
+    EndFor
+  EndFor
+  maxIndex = 1
+  
+  FindMaxIndex(count, LEN, maxIndex)
+  color = COLORS[maxIndex]
+EndFunction
+
+Function FindMaxIndex(in number[] array, in number length, out number maxIndex)
+  'LCD.Text(1,1,10,1, "a[0]="+array[0])
+  'LCD.Text(1,1,20,1, "a[1]="+array[1])
+  maxVal = array[0]
+  maxIndex = 0
+  
+  For i = 1 To length
+    If array[i] > maxVal Then
+      maxVal = array[i]
+      maxIndex = i
+    EndIf
+  EndFor
+  'LCD.Text(1,1,30,1, "max index: "+ maxIndex)
+EndFunction
+
+Function LeggiColore( in number sensorPort, in number longRange, in number debug, out string color)
+  raw = Sensor.ReadRaw(sensorPort,3)
+  r = raw[0]
+  g = raw[1]
+  b = raw[2]
+  If debug <> 0 Then
+    WriteRGBToScreen(r , g , b)
+    WriteHSVToScreen(h , s , v)
+  EndIf
+  RGBtoHSV(r , g , b , h , s , v)
+  ClassificaColore(h , s , v, longRange, color)
+EndFunction
+
+Function ClassificaColore(in number h, in number s, in number v, in number longRange, out string color)
+  color = "NONE"
+  If longRange = 1 Then
+    greenV = 3
+    greenS = 45
+    blueV = 7
+    blueS = 65
+    yellowS = 170
+    yellowV = 30
+    whiteS = 80
+    whiteV = 30
+  Else
+    greenV = 9
+    greenS = 150
+    blueV = 20
+    blueS = 160
+    yellowS = 170 ' TODO
+    yellowV = 30 ' TODO
+    whiteS = 80 ' TODO
+    whiteV = 30 ' TODO
+  EndIf
+  
+  If h > 65 And h < 175 And s > greenS And v > greenV Then
+    color = "GREEN"
+  ElseIf h > 190 And h < 245 And s > blueS And v > blueV Then
+    color = "BLUE"
+  ElseIf h > 25 And h < 50 And s > yellowS And v > yellowV Then
+    color = "YELLOW"
+  ElseIf (h < 12 Or h > 330) And s > 70 And v > 22 Then
+    color = "RED"
+  ElseIf s < whiteS And v > whiteV Then
+    color = "WHITE"
+  EndIf
+EndFunction
+
+Function RGBtoHSV ( in number r, in number g, in number b, out number h, out number s, out number v )
+  min = Math.Min(Math.Min(r,g), b)
+  max = Math.Max(Math.Max(r,g), b)
+  delta = max - min
+  v = max
+  
+  If delta = 0 Then
+    s = 0
+    h = 0
+  Else
+    If max > 0.0 Then
+      s = 255* delta / max
+    Else
+      s = 0
+      h = 0
+    EndIf
+    
+    If  r >= max Then
+      h = (g - b) / delta
+    Else
+      If  g >= max Then
+        h = 2.0 + ( b - r ) / delta
+      Else
+        h = 4.0 + ( r - g ) / delta
+      EndIf
+    EndIf
+    h *= 60.0
+    
+    If( h < 0.0 ) Then
+      h += 360.0
+    EndIf
+  EndIf
+  h = Math.Floor(h)
+  s = Math.Floor(s)
+EndFunction
+
+Function WriteRGBToScreen (in number r, in number g, in number b)
+  LCD.Text(1, 10, 10, 1, "R = " + r + "  ")
+  LCD.Text(1, 10, 30, 1, "G = " + g + "  ")
+  LCD.Text(1, 10, 50, 1, "B = " + b + "  " )
+EndFunction
+
+Function WriteHSVToScreen (in number h, in number s, in number v)
+  LCD.Text(1, 80, 10, 1, "H = " + h + "  ")
+  LCD.Text(1, 80, 30, 1, "S = " + s + "  ")
+  LCD.Text(1, 80, 50, 1, "V = " + v + "  ")
+EndFunction
+
+Function EnunciaColore(in string color, in number waitForCompletion)
+  If color = "BLUE" Then
+    Speaker.Play(100, "Blue")
+  ElseIf color = "GREEN" Then
+    Speaker.Play(100, "Green")
+  ElseIf color = "WHITE" Then
+    Speaker.Play(100, "White")
+  EndIf
+  
+  If waitForCompletion <> 0 Then
+    Speaker.Wait()
+  EndIf
+EndFunction
+
+Function BeepColor(in string color)
+  If color = "BLUE" Then
+    Speaker.Tone(100,2000,20)
+  ElseIf color = "GREEN" Then
+    Speaker.Tone(100,4000,20)
+  ElseIf color = "WHITE" Then
+    Speaker.Tone(100,1000,20)
+  EndIf
+EndFunction

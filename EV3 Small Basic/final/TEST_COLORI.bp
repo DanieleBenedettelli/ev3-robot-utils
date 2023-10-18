@@ -1,0 +1,71 @@
+folder "prjs" "WRO23"
+include "Colori"
+
+'count[0] = 5
+'count[1] = 3
+'LCD.Clear()
+'FindMaxIndex(count, 2, maxIndex)
+
+'Program.Delay(10000)
+SENSOR_PORT = 2
+Sensor.SetMode(SENSOR_PORT, 4)
+range = SHORT_RANGE
+talk = 0
+LCD.Clear()
+
+' SCEGLI RANGE
+chosen = 0
+LCD.Clear()
+LCD.Text(1, 5, 110, 1, "< SHORT       LONG >")
+While chosen = 0
+  If Buttons.Current = "L" Then
+    range = SHORT_RANGE
+    chosen = 1
+  ElseIf Buttons.Current = "R" Then
+    range = LONG_RANGE
+    chosen = 1
+  EndIf
+EndWhile
+Speaker.Tone(100,5000, 50)
+
+' wait for button release
+While Buttons.Current <> ""
+  Program.Delay(100)
+EndWhile
+
+chosen = 0
+LCD.Clear()
+LCD.Text(1, 5, 110, 1, "< MUTE       TALK >")
+While chosen = 0
+  If Buttons.Current = "L" Then
+    talk = 0
+    chosen = 1
+  ElseIf Buttons.Current = "R" Then
+    talk = 1
+    chosen = 1
+  EndIf
+EndWhile
+Speaker.Tone(100,5000, 50)
+
+While "true"
+  LeggiColore(SENSOR_PORT, range, SHOW_DEBUG, color)
+  LCD.Text(1, 10, 80, 1, "color = " + color+ "  ")
+  If ( color <> "NONE" ) Then
+    LeggiColoreRobusto(SENSOR_PORT, range, robustColor)
+    LCD.Text(1, 10, 90, 1, "rob. color = " + robustColor+ "  ")
+    
+    If talk = 1 Then
+      If robustColor = "BLUE" Then
+        Speaker.Play(100, "Blue")
+      ElseIf robustColor = "GREEN" Then
+        Speaker.Play(100, "Green")
+      ElseIf robustColor = "WHITE" Then
+        Speaker.Play(100, "White")
+      EndIf
+      Speaker.Wait()
+    EndIf
+  Else
+    LCD.Text(1, 10, 100, 1, "                                 ")
+  EndIf
+  Program.Delay(100)
+EndWhile
