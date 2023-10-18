@@ -192,9 +192,9 @@ Function CollectBlocksSmallBoat(in number direction, in number maxDistanceToSear
   If blocchiVisti= 2 Then
     DriveForDistanceNoAcc(110, SPEED)
   ElseIf blocchiVisti = 3 Then
-    DriveForDistanceNoAcc(30, SPEED) ' era 35
+    DriveForDistanceNoAcc(40, SPEED) ' era 35
   ElseIf blocchiVisti = 4 Then
-    DriveForDistanceNoAcc(-30, SPEED) ' era -25
+    DriveForDistanceNoAcc(-25, SPEED) ' era -25
   EndIf
 EndFunction
 

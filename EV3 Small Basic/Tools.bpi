@@ -59,9 +59,9 @@ EndSub
 
 Sub UnloadRampOnLargeBoat
   MoveAbsolute(@MOTOR_GRABBER, 60, 120, "True" , 0)
-  Program.Delay(400)
+  Program.Delay(200) ' 400 ms
   MoveAbsolute(@MOTOR_RAMP, 30, RAMP_UNLOAD, "True", 0) ' non aspetta, vel era 30
-  Program.Delay(400) ' TODO tara perché scarichi, era 500
+  Program.Delay(300) ' TODO tara perché scarichi, era 400
   RaiseRamp(0)
   Program.Delay(300) ' TODO tara perché rampa non tocchi blocchi, era 400
 EndSub
@@ -148,8 +148,8 @@ Sub GrabAndDropLast
 EndSub
 
 Sub PreGrab
-  MoveAbsolute(@MOTOR_GRABBER, 90, 60, "True", 1)
-  Program.Delay(50)
+  MoveAbsolute(@MOTOR_GRABBER, 90, 60, "True", 0)
+  Program.Delay(150)
   MoveAbsolute(@MOTOR_GRABBER, 100, @GRABBER_PREPARE, "True", 0)
   Program.Delay(200)
 EndSub

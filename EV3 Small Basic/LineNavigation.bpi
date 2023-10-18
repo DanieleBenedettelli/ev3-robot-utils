@@ -163,7 +163,7 @@ Function FollowLine(in number basePower, in number distanceBefore, in number unt
   EndIf
   
   lineFollowStatus = S_DISTANCE
-  If  Math.Abs(basePower)>60 Then ' se vado veloce, serve guadagno più alto
+  If  Math.Abs(basePower)>=60 Then ' se vado veloce, serve guadagno più alto
     gain = KP_FAST
     gainD = KD_FAST
   Else

@@ -18,8 +18,8 @@ CalibrateTools()
 'WaitAnyKey()
 Speaker.Tone(100,3000, 40)
 
-@greenBlocksCount = 2
-@blueBlocksCount = 0
+@greenBlocksCount = 1
+@blueBlocksCount = 1
 blocchiPresi[1] = 0
 blocchiPresi[2] = 0
 blocchiPresi[3] = 0
@@ -27,8 +27,9 @@ blocchiPresi[4] = 0
 
 'blocchiPresi
 CollectBlocksSmallBoat(1, 200)
+Program.Delay(100) ' per spegnere inerzia
 'CollectBlocksLargeBoat(-1,380)
-'SpinRight(90)
+SpinRight(90)
 
 WaitAnyKey()
 While "True"
