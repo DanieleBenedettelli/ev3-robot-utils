@@ -1,0 +1,232 @@
+folder "prjs" "WRO23"
+include "ColorDetection"
+include "DriveBase"
+include "LineNavigation"
+include "Tools"
+include "Utilities_v2"
+
+SLOW_SPEED = 20
+NORMAL_SPEED = 50
+FAST_SPEED = 70
+MOTOR_RIGHT = "C"
+MOTOR_LEFT = "B"
+MOTOR_RAMP = "A"
+MOTORS = MOTOR_RIGHT + MOTOR_LEFT
+BLOCK_SENSOR = 2
+LINE_SENSOR_RIGHT = 4
+LINE_SENSOR_LEFT = 3
+
+WHEEL_DIAMETER = 56 ' mm
+WHEELBASE = 178 ' mm
+DISTANCE_FACTOR = 2.03 ' 114.591559/WHEEL_DIAMETER
+TURNING_FACTOR = 3.2 '3.235 ' WHEELBASE / WHEEL_DIAMETER
+
+DISTANCE_LARGE_BOAT = 210
+DISTANCE_BLOCK1 = 150'135
+DISTANCE_BLOCK2 = 200'185
+
+SEARCH_FWD = 1
+SEARCH_BACK = -1
+
+LCD.Clear()
+Motor.Invert(MOTOR_LEFT)
+Sensor.SetMode(LINE_SENSOR_LEFT, 0) ' set reflected light intensity mode
+Sensor.SetMode(LINE_SENSOR_RIGHT, 0) ' set reflected light intensity mode
+Sensor.SetMode(BLOCK_SENSOR, 4) ' RGB mode
+Motor.ResetCount(MOTOR_GRABBER)
+Motor.ResetCount(MOTOR_RAMP)
+
+'  __  __    _    ___ _   _
+' |  \/  |  / \  |_ _| \ | |
+' | |\/| | / _ \  | ||  \| |
+' | |  | |/ ___ \ | || |\  |
+' |_|  |_/_/   \_\___|_| \_|
+
+' NEW HARDWARE 03-10-2023
+
+order1 = "NONE"
+order2 = "NONE"
+greenBlocksCount = 0
+blueBlocksCount = 0
+blocchiPresi[1] = 0
+blocchiPresi[2] = 0
+blocchiPresi[3] = 0
+blocchiPresi[4] = 0
+
+' CALIBRATION
+Motor.Stop(MOTORS, "True")
+CalibrateTools()
+
+LCD.Clear()
+LCD.Text(1, 10, 30, 2, "PRESS")
+LCD.Text(1, 10, 50, 2, " TO ")
+LCD.Text(1, 10, 70, 2, "START")
+WaitAnyKey()
+Speaker.Tone(100,3000, 40)
+LCD.Clear()
+
+Time.Reset9()
+
+'WaitAnyKey()
+'Program.End()
+
+' ESCI DA AREA START E LEGGI ORDINI
+DriveForDistanceNoAcc(80, 40)
+'Motor.MoveSteer(@MOTORS, 40, 0, 80 *  @DISTANCE_FACTOR, "False") ' non frena
+DriveUntilLine(LINE_SENSOR_LEFT, 40, 1, 75, 22)
+DriveAndScanOrder(DISTANCE_LARGE_BOAT, DISTANCE_BLOCK1, DISTANCE_BLOCK2, order1, order2)
+'WaitAnyKey()
+DriveUntilIntersection(40)
+'DriveUntilLine(LINE_SENSOR_LEFT, 40, 1, 75, 22)
+
+LCD.Clear()
+LCD.Text(1, 10, 30, 1, "order1 = " + order1 + "  ")
+LCD.Text(1, 10, 40, 1, "order2 = " + order2 + "  ")
+
+'Thread.Run = sayOrders ' non bloccante
+
+' SPINGI E RIFORNISCI BARCA
+DriveForDistanceNoAcc( 60, 40 ) ' dist era 75 speed era 40, usava rampa accelerazione
+'WaitAnyKey()
+DriveForDistanceNoAcc( 75, -90) ' era 67mm
+
+'WaitAnyKey()
+Time.Reset8()
+
+' VAI VERSO CONTAINER ESTROSO (2.50")
+SpinRight(91) ' era 90
+'WaitAnyKey()
+
+PAUSA_DEBUG = 200
+'WaitAnyKey()
+FollowLine(50, 140, 0, 1)
+'WaitAnyKey()
+ArcLeftNoAcc(90, 65)
+'WaitAnyKey()
+DriveForDistanceNoAcc(160, 60) ' era 160mm, primo par determina distanza dai blocchi
+'WaitAnyKey()
+ArcRightNoAcc(90, 65)
+Program.Delay(60)
+
+' VAI VERSO CONTAINER CLASSICO (richiede 3.60")
+'SpinRight(90)
+'FollowLine(80, 200, 0, 1)
+'SpinRight(90)
+'DriveForDistanceNoAcc(400,-90)
+' VAI A BATTUTA
+'Motor.StartPower(MOTORS,-60) ' era -60
+'Program.Delay(350)
+'Motor.Stop(MOTORS,"True")
+'DriveForDistanceNoAcc(40,30) ' primo parametro determina la distanza dai blocchi
+'ArcLeftNoAcc(90, 50)
+
+'LCD.Clear()
+'LCD.Text(1, 2, 100, 2, "time: " + Time.Get8()/1000 + "  ")
+'Speaker.Tone(100, 5000, 2000)
+'Program.Delay(30000)
+'Program.End()
+
+'WaitAnyKey()
+CollectBlocksSmallBoat(SEARCH_FWD, 200)
+
+'WaitAnyKey()
+
+' VAI DA CONTAINER A BARCA PICCOLA
+Program.Delay(100) ' per spegnere inerzia
+SpinRight(90)
+Program.Delay(100) ' per spegnere inerzia
+
+FollowLine(80, 500, 0, 1 )
+ReleaseBoat(0) ' apri gancio senza aspettare (o aspettare?)
+FollowLine(30, 110, 0, 1) 
+GrabBoat(1)
+
+' VAI VERSO MARE APERTO CON BARCA PICCOLA
+ArcLeftNoAcc(135, 60) 
+DriveUntilLine(@LINE_SENSOR_LEFT, 60, 1, 60, 25) 
+ArcRightNoAcc(45, 50) ' TODO vel era 30, può essere portata a 60?
+DriveForDistanceNoAcc(50, 40)
+' non andare troppo avanti per non perdere tempo: 50mm (per portarla fuori, aggiungere 180mm) vel era 70
+FollowLine(55, 90, 0, 1 )  
+ 
+' SCARICA POI SGANCIA BARCA PICCOLA
+UnloadRampOnSmallBoat()
+DriveUntilIntersection(-65) ' -70 OK
+GrabBoat(0)
+DriveForDistanceNoAcc(63, 80) ' avanti per andare sulla linea
+Program.Delay(50)
+SpinLeft(90)
+
+' VAI A PRENDERE IL BLOCCO BIANCO
+FollowLine(75, 330, 0, 1) ' la distanza regola quanto si va vicini al blocco bianco
+Program.Delay(50)
+SpinRight(90, 50) ' 92 era OK?
+DriveForDistanceNoAcc(-25, 40 ) ' distance, speed
+GrabAndDrop()
+
+'TENTATIVO SENZA BATTUTA (TROPPO RISCHIOSO)
+DriveForDistanceNoAcc(-300, 70) 
+Program.Delay(50)
+
+' MANOVRA A BATTUTA NECESSARIA?
+'DriveForDistanceNoAcc(-170, 80) 
+'ArcLeftNoAcc(-90)
+'Motor.StartPower(MOTORS,-60)
+'Program.Delay(400)
+'Motor.Stop(MOTORS,"True")
+'DriveForDistanceNoAcc(35,40) ' primo parametro determina la distanza dai blocchi, vel OK era 40
+'ArcLeftNoAcc(88) ' 88?
+
+CollectBlocksLargeBoat(SEARCH_BACK, 500)
+
+'PushBlocks() ' funziona anche senza
+
+' PRENDI BARCA GRANDE ANDANDO A BATTUTA
+ArcLeftNoAcc(-90)
+' A battuta
+Motor.StartPower(MOTORS,-60)
+Program.Delay(300)
+Motor.Stop(MOTORS,"True")
+DriveForDistanceNoAcc(75, 50) ' primo parametro determina l'allineamento alla barca, velocità OK era 50
+ArcRightNoAcc(90)
+ReleaseBoat(0)
+Program.Delay(200)
+
+' aggancia
+DriveForDistanceNoAcc(50, 25) 'primo parametro determina l'avvicinamento, secondo la velocità
+GrabBoat(1)
+'Program.Delay(100) ' era necessaria?
+ArcLeftNoAcc(135, 60)
+
+'vai verso linea
+DriveUntilLine(LINE_SENSOR_RIGHT, 60, 1, 65, 25) ' speed,  brake, white, black)
+ArcLeftNoAcc(45)
+
+' ESCI DAL PORTO VELOCEMENTE
+speedOut = 100
+FollowLine(speedOut, 750, 0, 1) ' veloce prima della barca piccola
+FollowLine(40, 100, 0, 1) ' vai piano per non urtare forte la barca piccola
+FollowLine(speedOut, 680, 1, 1) ' vai veloce frena a incrocio
+
+DriveForDistanceNoAcc(20, 50) ' spingi barca piccola?
+
+DriveForDistanceNoAcc(-90, 100) ' indietro -65 OK
+
+ArcRightNoAcc(90, 50) ' vel era 60
+
+' AGGANCIA CONTAINER ROSSO
+FollowLine(90, 250, 0 , 0) ' speed 80 funzionava, 240mm
+
+Time.Reset8()
+
+DriveForDistanceNoAcc(-510, 100) 
+UnloadRampOnLargeBoat()
+DriveForDistanceNoAcc(-20, 100) ' distance , speed
+
+LCD.Clear()
+LCD.Text(1, 2, 70, 2, "last: " + Time.Get8()/1000 + "  ")
+LCD.Text(1, 2, 100, 2, "time: " + Time.Get9()/1000 + "  ")
+Speaker.Tone(100, 5000, 2000)
+Program.Delay(30000)
+
+Program.End()
