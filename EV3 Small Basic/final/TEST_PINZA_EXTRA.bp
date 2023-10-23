@@ -1,0 +1,33 @@
+folder "prjs" "WRO23"
+include "StrumentiExtra"
+include "Colori"
+
+EXTRA_COLOR_SENSOR = 1
+
+Sensor.SetMode(EXTRA_COLOR_SENSOR, 4) ' RGB mode
+
+CalibraStrumentiExtra()
+ApriPinza(1)
+AbbassaPerLeggere(1)
+
+LCD.Clear()
+
+While "True"
+  colore = "NONE"
+  
+  While colore = "NONE"
+    LeggiColore( EXTRA_COLOR_SENSOR, SHORT_RANGE, SHOW_DEBUG, colore)
+    Program.Delay(100)
+  EndWhile
+  EnunciaColore(colore, 1)
+  'Speaker.Tone(100, 2000, 50)
+  
+  AbbassaPerPrendere(1)
+  ChiudiPinza(1)
+  AlzaBraccio(1)
+  Program.Delay(1000)
+  AbbassaPerPrendere(1)
+  ApriPinza(1)
+  AbbassaPerLeggere(1)
+  Program.Delay(1000)
+EndWhile

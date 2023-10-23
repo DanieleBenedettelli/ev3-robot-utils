@@ -9,8 +9,8 @@ Function LeggiColoreRobusto(in number SensorPort, in number longRange, out strin
   COLORS[0] = "BLUE"
   COLORS[1] = "GREEN"
   COLORS[2] = "WHITE"
-  COLORS[3] = "RED"
-  COLORS[4] = "YELLOW"
+  'COLORS[3] = "YELLOW"
+  'COLORS[4] = "RED"
   LeggiColoreRobusto(sensorPort, COLORS, 3, 7, longRange, color)
 EndFunction
 
@@ -19,7 +19,7 @@ Function LeggiColoreRobustoExtra(in number SensorPort, in number longRange, out 
   COLORS[1] = "GREEN"
   COLORS[2] = "WHITE"
   COLORS[3] = "YELLOW"
-  COLORS[4] = "RED"
+  'COLORS[4] = "RED"
   LeggiColoreRobusto(sensorPort, COLORS, 4, 8, longRange, color)
 EndFunction
 
@@ -78,8 +78,8 @@ Function ClassificaColore(in number h, in number s, in number v, in number longR
     blueS = 65
     blueV = 7
     
-    yellowS = 180
-    yellowV = 30
+    yellowS = 165
+    yellowV = 20
     
     whiteS = 50
     whiteV = 30
@@ -101,7 +101,7 @@ Function ClassificaColore(in number h, in number s, in number v, in number longR
     color = "GREEN"
   ElseIf h > 190 And h < 245 And s > blueS And v > blueV Then
     color = "BLUE"
-  ElseIf h > 25 And h < 50 And s > yellowS And v > yellowV Then
+  ElseIf h > 25 And h < 60 And s > yellowS And v > yellowV Then
     color = "YELLOW"
   ElseIf (h < 12 Or h > 330) And s > 70 And v > 22 Then
     color = "RED"
@@ -163,7 +163,9 @@ Function EnunciaColore(in string color, in number waitForCompletion)
     Speaker.Play(100, "Blue")
   ElseIf color = "GREEN" Then
     Speaker.Play(100, "Green")
-  ElseIf color = "WHITE" Then
+  ElseIf color = "YELLOW" Then
+    Speaker.Play(100, "Yellow")
+  ElseIf color = "WHITE" Then    
     Speaker.Play(100, "White")
   EndIf
   
@@ -177,6 +179,8 @@ Function BeepColor(in string color)
     Speaker.Tone(100,2000,20)
   ElseIf color = "GREEN" Then
     Speaker.Tone(100,4000,20)
+  ElseIf color = "YELLOW" Then
+    Speaker.Tone(100,6000,20)    
   ElseIf color = "WHITE" Then
     Speaker.Tone(100,1000,20)
   EndIf

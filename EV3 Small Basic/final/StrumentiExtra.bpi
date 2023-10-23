@@ -1,0 +1,102 @@
+MOTOR_CLAW = "A"
+MOTOR_ARM = "D"
+
+ALTEZZA_RESET_OFFSET = 50
+ALTEZZA_LETTURA = -250
+ALTEZZA_PRESA = -210
+ALTEZZA_SU = 0
+
+Function ApriPinza(in number wait)
+  If Motor.GetCount(@MOTOR_ARM) > -100 Then
+    MoveAbsolute(@MOTOR_ARM, 40, -100, "True", 1)
+  EndIf
+  MoveAbsolute(@MOTOR_CLAW, 50, 65, "True", wait)
+EndFunction
+
+Function ChiudiPinza(in number wait)
+  Motor.Start(@MOTOR_CLAW, -30)
+  If wait= 1 Then
+    Program.Delay(250)
+    Motor.Stop(@MOTOR_CLAW, "True")
+  Else
+    Program.Delay(100)
+  EndIf
+  'MoveAbsolute(@MOTOR_CLAW, 40, 1, "True", wait)
+EndFunction
+
+Function MuoviBraccio( in number angle, in number wait)
+  MoveAbsolute(@MOTOR_ARM, 70, angle, "True", in number wait)
+EndFunction
+
+Function AbbassaPerLeggere(in number wait)
+  MoveAbsolute(@MOTOR_ARM, 40, @ALTEZZA_LETTURA, "True", wait)
+EndFunction
+
+Function AbbassaPerPrendere(in number wait)
+  MoveAbsolute(@MOTOR_ARM, 40, @ALTEZZA_PRESA, "True", wait)
+EndFunction
+
+Function AlzaBraccio(in number wait)
+  MoveAbsolute(@MOTOR_ARM, 40, @ALTEZZA_SU, "True", wait)
+EndFunction
+
+Sub CalibraPinzaExtra
+  Motor.StartPower(@MOTOR_CLAW,30)
+  Program.Delay(200)
+  Motor.StartPower(@MOTOR_CLAW, -30)
+  
+  While Math.Abs(Motor.GetSpeed(@MOTOR_CLAW)) < 1
+    Program.Delay(100)
+  EndWhile
+  
+  Speaker.Tone(100, 2000, 20)
+  While Math.Abs(Motor.GetSpeed(@MOTOR_CLAW)) > 0
+    Program.Delay(100)
+  EndWhile
+  
+  Motor.Stop(@MOTOR_CLAW, "True")
+  Program.Delay(100)
+  Motor.ResetCount(@MOTOR_CLAW)
+EndSub
+
+Sub CalibraBraccioExtra
+  
+  Motor.StartPower(@MOTOR_ARM, 25)
+  
+  While Math.Abs(Motor.GetSpeed(@MOTOR_ARM)) < 1
+    Program.Delay(100)
+  EndWhile
+  
+  Speaker.Tone(100, 2000, 20)
+  While Math.Abs(Motor.GetSpeed(@MOTOR_ARM)) > 0
+    Program.Delay(100)
+  EndWhile
+  
+  Motor.Stop(@MOTOR_ARM, "True")
+  Program.Delay(50)
+  Motor.Move(@MOTOR_ARM, -50, ALTEZZA_RESET_OFFSET, "True")
+  Program.Delay(50)
+  Motor.ResetCount(@MOTOR_ARM)
+EndSub
+
+Sub CalibraStrumentiExtra
+  'Motor.StartPower(@MOTOR_ARM,-25)
+  'Program.Delay(200)
+  'Motor.Stop(@MOTOR_ARM, "True")
+  CalibraPinzaExtra()
+  CalibraBraccioExtra()
+EndSub
+
+Function MoveAbsolute(in string motor, in number speed, in number degrees, in string brake, in number waitForCompletion)
+  diff = degrees - Motor.GetCount(motor)
+  If diff < 0 Then
+    speed *= -1
+    diff  *= -1
+  EndIf
+  Motor.Schedule(motor,speed, 0, diff, 0, brake)
+  If waitForCompletion<>0 Then
+    While Motor.IsBusy(motor)
+      Program.Delay(20)
+    EndWhile
+  EndIf
+EndFunction
