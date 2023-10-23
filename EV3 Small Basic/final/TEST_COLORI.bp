@@ -51,7 +51,7 @@ While "true"
   LeggiColore(SENSOR_PORT, range, SHOW_DEBUG, color)
   LCD.Text(1, 10, 80, 1, "color = " + color+ "  ")
   If ( color <> "NONE" ) Then
-    LeggiColoreRobusto(SENSOR_PORT, range, robustColor)
+    LeggiColoreRobustoExtra(SENSOR_PORT, range, robustColor)
     LCD.Text(1, 10, 90, 1, "rob. color = " + robustColor+ "  ")
     
     If talk = 1 Then
@@ -61,6 +61,8 @@ While "true"
         Speaker.Play(100, "Green")
       ElseIf robustColor = "WHITE" Then
         Speaker.Play(100, "White")
+      ElseIf robustColor = "YELLOW" Then
+        Speaker.Play(100, "Yellow")
       EndIf
       Speaker.Wait()
     EndIf

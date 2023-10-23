@@ -14,6 +14,15 @@ Function LeggiColoreRobusto(in number SensorPort, in number longRange, out strin
   LeggiColoreRobusto(sensorPort, COLORS, 3, 7, longRange, color)
 EndFunction
 
+Function LeggiColoreRobustoExtra(in number SensorPort, in number longRange, out string color)
+  COLORS[0] = "BLUE"
+  COLORS[1] = "GREEN"
+  COLORS[2] = "WHITE"
+  COLORS[3] = "YELLOW"
+  COLORS[4] = "RED"
+  LeggiColoreRobusto(sensorPort, COLORS, 4, 8, longRange, color)
+EndFunction
+
 Function LeggiColoreRobusto(in number sensorPort, in string[] COLORS, in number LEN, in number samples, in number longRange, out string color)
   
   count = Vector.Init(LEN, 0)
@@ -63,23 +72,29 @@ EndFunction
 Function ClassificaColore(in number h, in number s, in number v, in number longRange, out string color)
   color = "NONE"
   If longRange = 1 Then
-    greenV = 3
     greenS = 45
-    blueV = 7
+    greenV = 3
+    
     blueS = 65
-    yellowS = 170
+    blueV = 7
+    
+    yellowS = 180
     yellowV = 30
-    whiteS = 80
+    
+    whiteS = 50
     whiteV = 30
-  Else
-    greenV = 9
+  Else ' SHORT RANGE
     greenS = 150
-    blueV = 20
+    greenV = 9
+    
     blueS = 160
-    yellowS = 170 ' TODO
-    yellowV = 30 ' TODO
-    whiteS = 80 ' TODO
-    whiteV = 30 ' TODO
+    blueV = 20
+    
+    yellowS = 180 
+    yellowV = 40 
+    
+    whiteS = 50
+    whiteV = 90
   EndIf
   
   If h > 65 And h < 175 And s > greenS And v > greenV Then
