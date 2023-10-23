@@ -1,0 +1,153 @@
+folder "prjs" "WRO23"
+include "ColorDetection"
+include "DriveBase"
+include "LineNavigation"
+include "Tools"
+include "Utilities_v2"
+
+SLOW_SPEED = 20
+NORMAL_SPEED = 50
+FAST_SPEED = 70
+MOTOR_RIGHT = "C"
+MOTOR_LEFT = "B"
+MOTOR_RAMP = "A"
+MOTORS = MOTOR_RIGHT + MOTOR_LEFT
+BLOCK_SENSOR = 2
+LINE_SENSOR_RIGHT = 4
+LINE_SENSOR_LEFT = 3
+
+WHEEL_DIAMETER = 56 ' mm
+WHEELBASE = 178 ' mm
+DISTANCE_FACTOR = 2.03 ' 114.591559/WHEEL_DIAMETER
+TURNING_FACTOR = 3.2 '3.235 ' WHEELBASE / WHEEL_DIAMETER
+
+DISTANCE_LARGE_BOAT = 210
+DISTANCE_BLOCK1 = 150'135
+DISTANCE_BLOCK2 = 200'185
+
+SEARCH_FWD = 1
+SEARCH_BACK = -1
+
+LCD.Clear()
+Motor.Invert(MOTOR_LEFT)
+Sensor.SetMode(LINE_SENSOR_LEFT, 0) ' set reflected light intensity mode
+Sensor.SetMode(LINE_SENSOR_RIGHT, 0) ' set reflected light intensity mode
+Sensor.SetMode(BLOCK_SENSOR, 4) ' RGB mode
+Motor.ResetCount(MOTOR_GRABBER)
+Motor.ResetCount(MOTOR_RAMP)
+
+'  __  __    _    ___ _   _
+' |  \/  |  / \  |_ _| \ | |
+' | |\/| | / _ \  | ||  \| |
+' | |  | |/ ___ \ | || |\  |
+' |_|  |_/_/   \_\___|_| \_|
+
+' NEW HARDWARE 03-10-2023
+
+order1 = "NONE"
+order2 = "NONE"
+greenBlocksCount = 0
+blueBlocksCount = 0
+blocchiPresi[1] = 0
+blocchiPresi[2] = 0
+blocchiPresi[3] = 0
+blocchiPresi[4] = 0
+
+' CALIBRATION
+Motor.Stop(MOTORS, "True")
+CalibrateTools()
+
+LCD.Clear()
+LCD.Text(1, 10, 30, 2, "PRESS")
+LCD.Text(1, 10, 50, 2, " TO ")
+LCD.Text(1, 10, 70, 2, "START")
+WaitAnyKey()
+Speaker.Tone(100,3000, 40)
+LCD.Clear()
+
+Time.Reset9()
+
+'WaitAnyKey()
+'Program.End()
+
+' ESCI DA AREA START E LEGGI ORDINI
+DriveForDistanceNoAcc(80, 40)
+'Motor.MoveSteer(@MOTORS, 40, 0, 80 *  @DISTANCE_FACTOR, "False") ' non frena
+DriveUntilLine(LINE_SENSOR_LEFT, 40, 1, 75, 22)
+DriveAndScanOrderExtra(DISTANCE_LARGE_BOAT, DISTANCE_BLOCK1, DISTANCE_BLOCK2, order1, order2)
+LCD.Clear()
+LCD.Text(1, 10, 30, 1, "order1 = " + order1 + "  ")
+LCD.Text(1, 10, 40, 1, "order2 = " + order2 + "  ")
+If order1 = "YELLOW" or "WHITE" Then
+  DriveForDistanceNoAcc(-30,50)
+  Program.Delay(100)
+  SpinLeft(90)
+  Program.Delay(100)
+  ReleaseBoat(1)
+  Program.Delay(100)
+  DriveForDistanceNoAcc(90,20)
+  Program.Delay(100)
+  GrabBoat(1)
+  Program.Delay(100)
+  DriveForDistanceNoAcc(-90,40)
+  Program.Delay(100)
+  SpinRight(90)
+  Program.Delay(100)
+  FollowLine(40,0,1,1)
+  Program.Delay(100)
+  DriveForDistanceNoAcc(-25,30)
+  Program.Delay(100)
+  SpinRight(87)
+  Program.Delay(100)
+ElseIf order2 = "YELLOW" or "WHITE" Then
+  DriveForDistanceNoAcc(40,30)
+  SpinLeft(90)
+  ReleaseBoat(1)
+  DriveForDistanceNoAcc(85,20)
+  Program.Delay(500)
+  GrabBoat(1)
+  DriveForDistanceNoAcc(-85,40)
+  SpinRight(90)
+  FollowLine(-40,0,1,1)
+  DriveForDistanceNoAcc(-15,30)
+  SpinRight(87)
+EndIf
+
+FollowLine(50, 140, 0, 1)
+'WaitAnyKey()
+ArcLeftNoAcc(90, 40)
+'WaitAnyKey()
+DriveForDistanceNoAcc(162, 40) ' era 160mm, primo par determina distanza dai blocchi
+'WaitAnyKey()
+ArcRightNoAcc(90, 40)
+Program.Delay(60)
+CollectBlocksLargeBoatExtra(SEARCH_FWD, 1000)
+DriveForDistanceNoAcc(20, 40) 
+SpinRight(90)
+FollowLine(50, 780, 0, 1)
+ReleaseBoat(1)
+DriveForDistanceNoAcc(-50,30)
+SpinRight(180)
+GrabBoat(1)
+DriveForDistanceNoAcc(30,30)
+SpinRight(90)
+ReleaseBoat(1)
+FollowLine(50, 170, 0, 0)
+GrabBoat(1)
+FollowLine(50, 400, 1, 1) ' vai veloce frena a incrocio
+
+DriveForDistanceNoAcc(20, 50) ' spingi barca piccola?
+
+DriveForDistanceNoAcc(-90, 50) ' indietro -65 OK
+
+ArcRightNoAcc(90, 50) ' vel era 60
+
+' AGGANCIA CONTAINER ROSSO
+FollowLine(90, 250, 0 , 0) ' speed 80 funzionava, 240mm
+DriveForDistanceNoAcc(-40, 40)
+UnloadRampOnLargeBoat()
+ReleaseBoat(1)
+DriveForDistanceNoAcc(-40, 40)
+
+
+Program.End()
