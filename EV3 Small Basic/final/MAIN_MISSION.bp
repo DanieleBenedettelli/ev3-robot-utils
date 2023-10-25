@@ -175,8 +175,8 @@ PrendiBlocchiPerBarcaGrande(CERCA_INDIETRO, 500)
 ' PRENDI BARCA GRANDE ANDANDO A BATTUTA
 ArcoSinistra(-90)
 ' A battuta
-Motor.StartPower(MOTORS,-60)
-Pausa(300)
+Motor.StartPower(MOTORS,-70)
+Pausa(400)
 Motor.Stop(MOTORS,"True")
 VaiPerDistanza(75, 50) ' primo parametro determina l'allineamento alla barca, velocità OK era 50
 ArcoDestra(90)
@@ -184,7 +184,7 @@ LasciaBarca(0)
 Pausa(200)
 
 ' aggancia
-VaiPerDistanza(50, 25) 'primo parametro determina l'avvicinamento, secondo la velocità
+VaiPerDistanza(60, 25) 'primo parametro determina l'avvicinamento alla barca, secondo la velocità
 PrendiBarca(1)
 'Pausa(100) ' era necessaria?
 ArcoSinistra(135, 60)
@@ -205,7 +205,8 @@ VaiPerDistanza(-90, 100) ' indietro
 ArcoDestra(90, 50) ' vel era 60
 
 ' AGGANCIA CONTAINER ROSSO
-SeguiLinea(90, 250, 0 , 0) ' speed 80 funzionava, 240mm
+SeguiLinea(90, 160, 0 , 0) 
+SeguiLinea(40, 50, 0 , 0)  
 
 Time.Reset8()
 
