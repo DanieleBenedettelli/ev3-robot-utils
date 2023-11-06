@@ -29,6 +29,16 @@ DISTANCE_BLOCK2 = 200
 CERCA_AVANTI = 1
 CERCA_INDIETRO = -1
 
+
+order1 = "NONE"
+order2 = "NONE"
+greenBlocksCount = 0
+blueBlocksCount = 0
+blocchiPresi[1] = 0
+blocchiPresi[2] = 0
+blocchiPresi[3] = 0
+blocchiPresi[4] = 0
+
 LCD.Clear()
 Motor.Invert(MOTOR_LEFT)
 Sensor.SetMode(LINE_SENSOR_LEFT, 0) ' set reflected light intensity mode
@@ -46,14 +56,6 @@ Motor.ResetCount(MOTOR_RAMP)
 ' NEW HARDWARE 03-10-2023
 ' API SEMPLIFICATA 18-10-2023
 
-order1 = "NONE"
-order2 = "NONE"
-greenBlocksCount = 0
-blueBlocksCount = 0
-blocchiPresi[1] = 0
-blocchiPresi[2] = 0
-blocchiPresi[3] = 0
-blocchiPresi[4] = 0
 
 ' CALIBRATION
 Motor.Stop(MOTORS, "True")
@@ -92,14 +94,16 @@ VaiPerDistanza( -75, 90) ' indietro
 Time.Reset8()
 
 ' VAI VERSO CONTAINER ESTROSO (2.50")
-SpinDestra(91) ' era 90
+SpinDestra(90) ' 90 è OK
 'AspettaUnTasto()
 
 SeguiLinea(50, 140, 0, 1)
-ArcoSinistra(90, 65)
+ArcoSinistra(89, 65) ' angolo era 90
+
 VaiPerDistanza(160, 60) ' era 160mm, primo par determina distanza dai blocchi
+
 ArcoDestra(90, 65)
-Pausa(60)
+Pausa(50)
 
 ' VAI VERSO CONTAINER CLASSICO (richiede 3.60")
 'SpinDestra(90)

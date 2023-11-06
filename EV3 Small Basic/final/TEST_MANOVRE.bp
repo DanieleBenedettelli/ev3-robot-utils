@@ -1,0 +1,47 @@
+folder "prjs" "WRO23"
+include "Manovre"
+include "Colori"
+include "Navigazione"
+include "Strumenti"
+include "FunzioniComplesse"
+
+SLOW_SPEED = 20
+NORMAL_SPEED = 50
+FAST_SPEED = 70
+MOTOR_RIGHT = "C"
+MOTOR_LEFT = "B"
+MOTOR_RAMP = "A"
+MOTORS = MOTOR_RIGHT + MOTOR_LEFT
+BLOCK_SENSOR = 2
+LINE_SENSOR_RIGHT = 4
+LINE_SENSOR_LEFT = 3
+
+WHEEL_DIAMETER = 56 ' mm
+WHEELBASE = 178 ' mm
+DISTANCE_FACTOR = 2.03 ' 114.591559/WHEEL_DIAMETER
+TURNING_FACTOR = 3.2 '3.235 ' WHEELBASE / WHEEL_DIAMETER
+
+order1 = "NONE"
+order2 = "NONE"
+greenBlocksCount = 0
+blueBlocksCount = 0
+blocchiPresi[1] = 0
+blocchiPresi[2] = 0
+blocchiPresi[3] = 0
+blocchiPresi[4] = 0
+
+Motor.Invert(MOTOR_LEFT)
+Sensor.SetMode(LINE_SENSOR_LEFT, 0) ' set reflected light intensity mode
+Sensor.SetMode(LINE_SENSOR_RIGHT, 0) ' set reflected light intensity mode
+Sensor.SetMode(BLOCK_SENSOR, 4) ' RGB mode
+Motor.ResetCount(MOTOR_GRABBER)
+Motor.ResetCount(MOTOR_RAMP)
+
+
+
+For i = 1 To 4
+  VaiPerDistanza(100, 50)
+  ArcoDestra(90)
+EndFor
+
+Program.Delay(500)
